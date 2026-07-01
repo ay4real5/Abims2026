@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { AudioProvider } from "@/components/audio-manager";
 import ScrollProgress from "@/components/scroll-progress";
 import EnvelopeIntro from "@/components/envelope-intro";
@@ -20,15 +20,37 @@ export default function Home() {
     setEnvelopeOpen(true);
   }, []);
 
+  useEffect(() => {
+    document.body.style.overflow = envelopeOpen ? "" : "hidden";
+    document.documentElement.style.overflow = envelopeOpen ? "" : "hidden";
+
+    return () => {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    };
+  }, [envelopeOpen]);
+
   return (
     <AudioProvider>
       {envelopeOpen && <ScrollProgress />}
-      <main className="flex flex-col">
-        {/* Envelope intro — always in DOM for scroll-back refold */}
+      <main
+        className="flex flex-col"
+        style={{
+          margin: 0,
+          padding: 0,
+          overflowX: "hidden",
+        }}
+      >
         <div
           style={{
-            minHeight: "100vh",
-            overflow: "visible",
+            height: "100dvh",
+            minHeight: "100dvh",
+            maxHeight: "100dvh",
+            margin: 0,
+            padding: 0,
+            overflow: "hidden",
+            display: "grid",
+            placeItems: "center",
           }}
         >
           <EnvelopeIntro onOpen={handleEnvelopeOpen} />
@@ -37,6 +59,7 @@ export default function Home() {
         {/* Main content — revealed after envelope opens */}
         <div
           style={{
+            display: envelopeOpen ? "block" : "none",
             opacity: envelopeOpen ? 1 : 0,
             transition: "opacity 0.8s ease-in-out",
             pointerEvents: envelopeOpen ? "auto" : "none",

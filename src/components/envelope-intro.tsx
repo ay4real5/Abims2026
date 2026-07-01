@@ -192,8 +192,14 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
   const [showScrollHint, setShowScrollHint] = useState(false);
   const [zoomIn, setZoomIn] = useState(false);
   const [sceneOpen, setSceneOpen] = useState(false);
+  const [introVisible, setIntroVisible] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setIntroVisible(true), 350);
+    return () => clearTimeout(t);
+  }, []);
 
   // Clear all timers on unmount
   useEffect(() => () => timersRef.current.forEach(clearTimeout), []);
@@ -318,9 +324,8 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
   const cardFace = "linear-gradient(175deg, #FFFDF7 0%, #FAF4E6 40%, #F3E9D2 100%)";
   const goldEdge = "1px solid rgba(180,150,80,0.4)";
 
-  // Envelope dimensions — portrait, mobile-first
-  const envW = "min(320px, 78vw)";
-  const envH = "min(440px, 108vw)";
+  // Envelope dimensions — portrait, mobile-first: dominates width while respecting viewport height
+  const envW = "min(86vw, 58dvh)";
 
   return (
     <section
@@ -464,21 +469,34 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
       {/* ===== ENVELOPE STAGE (with camera zoom) ===== */}
       <motion.div
         className="relative z-10"
+        initial={{ opacity: 0, scale: 0.94, filter: "blur(8px)" }}
+        animate={{
+          opacity: introVisible ? 1 : 0,
+          scale: !introVisible ? 0.94 : sceneOpen ? 1.12 : zoomIn ? 1.08 : 1,
+          y: sceneOpen ? -12 : 0,
+          filter: introVisible ? "blur(0px)" : "blur(8px)",
+        }}
         style={{
           width: envW,
-          height: envH,
+          aspectRatio: "320 / 440",
           perspective: "1400px",
           perspectiveOrigin: "50% 40%",
         }}
-        animate={{
-          scale: sceneOpen ? 1.12 : zoomIn ? 1.08 : 1,
-          y: sceneOpen ? -12 : 0,
-        }}
-        transition={{ duration: 1.2, ease: EASE_PAPER }}
+        transition={{ duration: introVisible ? 1.4 : 0.2, ease: EASE_PAPER }}
       >
         {/* ===== ENVELOPE BODY (back layer — the pocket) ===== */}
-        <div
+        <motion.div
           className="absolute inset-0 rounded-[4px]"
+          animate={
+            state === "sealed" && introVisible
+              ? { y: [0, -5, 0, 3, 0], rotateZ: [-0.25, 0.18, -0.12, 0] }
+              : { y: 0, rotateZ: 0 }
+          }
+          transition={
+            state === "sealed" && introVisible
+              ? { duration: 5.5, repeat: Infinity, ease: "easeInOut" }
+              : { duration: 0.8, ease: EASE_PAPER }
+          }
           style={{
             background: envelopeBody,
             boxShadow:
@@ -758,7 +776,7 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
               filter: "blur(10px)",
             }}
           />
-        </div>
+        </motion.div>
       </motion.div>
 
       {/* ===== TAP HINT (minimal, below envelope) ===== */}

@@ -33,47 +33,40 @@ export default function Home() {
   return (
     <AudioProvider>
       {envelopeOpen && <ScrollProgress />}
-      <main
-        className="flex flex-col"
+
+      {/* ═══ ENVELOPE SCENE — full viewport, disappears after opening ═══ */}
+      <div
         style={{
-          margin: 0,
-          padding: 0,
-          overflowX: "hidden",
+          position: envelopeOpen ? "absolute" : "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: envelopeOpen ? "0" : "100dvh",
+          overflow: "hidden",
+          zIndex: envelopeOpen ? 0 : 100,
+          transition: "height 1.2s cubic-bezier(0.25, 0.1, 0.25, 1)",
         }}
       >
-        <div
-          style={{
-            height: "100dvh",
-            minHeight: "100dvh",
-            maxHeight: "100dvh",
-            margin: 0,
-            padding: 0,
-            overflow: "hidden",
-            display: "grid",
-            placeItems: "center",
-          }}
-        >
-          <EnvelopeIntro onOpen={handleEnvelopeOpen} />
-        </div>
+        <EnvelopeIntro onOpen={handleEnvelopeOpen} />
+      </div>
 
-        {/* Main content — revealed after envelope opens */}
-        <div
-          style={{
-            display: envelopeOpen ? "block" : "none",
-            opacity: envelopeOpen ? 1 : 0,
-            transition: "opacity 0.8s ease-in-out",
-            pointerEvents: envelopeOpen ? "auto" : "none",
-          }}
-        >
-          <CeremonyReception />
-          <EventTimeline />
-          <PhotoGallery />
-          <RsvpSection />
-          <Accommodations />
-          <Registry />
-          <FaqSection />
-          <ContactFooter />
-        </div>
+      {/* ═══ MAIN CONTENT — scene changes, invitation takes over ═══ */}
+      <main
+        style={{
+          position: "relative",
+          opacity: envelopeOpen ? 1 : 0,
+          transition: "opacity 1.5s cubic-bezier(0.25, 0.1, 0.25, 1)",
+          pointerEvents: envelopeOpen ? "auto" : "none",
+        }}
+      >
+        <CeremonyReception />
+        <EventTimeline />
+        <PhotoGallery />
+        <RsvpSection />
+        <Accommodations />
+        <Registry />
+        <FaqSection />
+        <ContactFooter />
       </main>
     </AudioProvider>
   );

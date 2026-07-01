@@ -6,16 +6,15 @@ import { useAudio } from "@/components/audio-manager";
 import { useGuestName } from "@/lib/use-guest-name";
 import { weddingData } from "@/lib/wedding-data";
 
-type EnvelopeState = "sealed" | "cracking" | "opening" | "sliding" | "open" | "closing";
+/* ═══════════════════════════════════════════════════════════
+   EASING — everything glides, nothing bounces
+   ═══════════════════════════════════════════════════════════ */
+const EASE_GLIDE = [0.25, 0.1, 0.25, 1] as const;
+const EASE_HEAVY = [0.16, 1, 0.3, 1] as const;
 
-/* Paper easing curves — mimic real paper movement */
-const EASE_PAPER = [0.16, 1, 0.3, 1] as const;
-const EASE_SLIDE = [0.22, 1, 0.36, 1] as const;
-const EASE_CRACK = [0.34, 1.56, 0.64, 1] as const;
-const EASE_CLOSE = [0.4, 0, 0.2, 1] as const;
-const EASE_FLAP = [0.4, 0, 0.2, 1] as const;
-
-/* Haptic feedback */
+/* ═══════════════════════════════════════════════════════════
+   HAPTIC FEEDBACK
+   ═══════════════════════════════════════════════════════════ */
 function haptic(pattern: number | number[]) {
   try {
     if (typeof navigator !== "undefined" && "vibrate" in navigator) {
@@ -24,140 +23,141 @@ function haptic(pattern: number | number[]) {
   } catch {}
 }
 
-/* Ornate gold corner flourish */
-function Flourish({ className, style, size = 60 }: { className?: string; style?: React.CSSProperties; size?: number }) {
-  return (
-    <svg className={className} style={style} width={size} height={size} viewBox="0 0 70 70" fill="none" aria-hidden>
-      <path
-        d="M4 4 C4 30, 20 44, 46 44 M4 4 C30 4, 44 20, 44 46 M4 4 C4 18, 10 24, 24 24 M4 4 C18 4, 24 10, 24 24"
-        stroke="url(#goldGrad)"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-      />
-      <circle cx="46" cy="46" r="2.4" fill="url(#goldGrad)" />
-      <circle cx="24" cy="24" r="1.6" fill="url(#goldGrad)" />
-      <defs>
-        <linearGradient id="goldGrad" x1="0" y1="0" x2="70" y2="70" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#A8863F" />
-          <stop offset="0.5" stopColor="#E6CE88" />
-          <stop offset="1" stopColor="#C9A85C" />
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-}
-
-/* Decorative gold border frame for invitation card */
-function GoldBorder({ className, style }: { className?: string; style?: React.CSSProperties }) {
-  return (
-    <svg className={className} style={style} fill="none" viewBox="0 0 200 280" preserveAspectRatio="none" aria-hidden>
-      <rect x="3" y="3" width="194" height="274" rx="4" stroke="url(#borderGrad)" strokeWidth="1.5" fill="none" />
-      <rect x="8" y="8" width="184" height="264" rx="2" stroke="url(#borderGrad)" strokeWidth="0.6" fill="none" opacity="0.6" />
-      <defs>
-        <linearGradient id="borderGrad" x1="0" y1="0" x2="200" y2="280" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#A8863F" />
-          <stop offset="0.5" stopColor="#E6CE88" />
-          <stop offset="1" stopColor="#C9A85C" />
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-}
-
-/* Wax seal with crack lines */
-function WaxSeal({ cracking, monogram }: { cracking: boolean; monogram: string }) {
+/* ═══════════════════════════════════════════════════════════
+   PAPER TEXTURE — SVG noise for cotton paper feel
+   ═══════════════════════════════════════════════════════════ */
+function PaperGrain({ opacity = 0.4 }: { opacity?: number }) {
   return (
     <div
-      className="relative rounded-full flex items-center justify-center"
+      aria-hidden
       style={{
+        position: "absolute",
+        inset: 0,
+        backgroundImage:
+          "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.82 0 0 0 0 0.74 0 0 0 0 0.56 0 0 0 0.1 0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E\")",
+        opacity,
+        mixBlendMode: "multiply",
+        pointerEvents: "none",
+        borderRadius: "inherit",
+      }}
+    />
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   WAX SEAL — photorealistic with imperfections
+   ═══════════════════════════════════════════════════════════ */
+function WaxSeal({
+  cracking,
+  monogram,
+}: {
+  cracking: boolean;
+  monogram: string;
+}) {
+  return (
+    <div
+      style={{
+        position: "relative",
         width: "100%",
         height: "100%",
+        borderRadius: "50%",
         background:
-          "radial-gradient(circle at 34% 28%, #FFF5D6 0%, #E6CE88 16%, #C9A85C 42%, #A8863F 68%, #8A6D2F 86%, #6B5524 100%)",
+          "radial-gradient(circle at 35% 30%, #C9A050 0%, #A87D30 20%, #8A6225 45%, #6B4A1A 70%, #4A3215 90%, #3A2810 100%)",
         boxShadow:
-          "0 6px 20px rgba(108,85,36,0.55), inset 0 -4px 8px rgba(80,60,20,0.5), inset 0 4px 8px rgba(255,248,225,0.5), 0 0 0 2px rgba(168,134,63,0.2)",
+          "0 4px 14px rgba(60,40,15,0.6), inset 0 -5px 10px rgba(30,20,5,0.5), inset 0 4px 8px rgba(255,220,150,0.25), 0 0 0 2px rgba(100,70,25,0.15)",
         overflow: "hidden",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
       }}
     >
-      {/* Notched seal edge */}
-      <span
-        className="absolute rounded-full pointer-events-none"
-        style={{ inset: "5px", border: "1.5px dashed rgba(80,60,20,0.4)" }}
-      />
-      {/* Specular highlight */}
-      <span
-        className="absolute rounded-full bg-white/50 blur-[5px]"
-        style={{ width: "34%", height: "34%", top: "14%", left: "16%" }}
-      />
-      {/* Shimmer sweep */}
-      <span
-        className="absolute inset-0"
+      {/* Wax imperfections — irregular edge bumps */}
+      <svg
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+        viewBox="0 0 100 100"
+        aria-hidden
+      >
+        <circle cx="50" cy="50" r="47" fill="none" stroke="rgba(60,40,15,0.15)" strokeWidth="0.5" strokeDasharray="2 1.5 1 2 3 1" />
+      </svg>
+
+      {/* Specular highlight — soft, off-center */}
+      <div
         style={{
-          background:
-            "linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.45) 48%, transparent 62%)",
-          backgroundSize: "200% 100%",
-          animation: "sealShimmer 3s ease-in-out infinite",
+          position: "absolute",
+          width: "38%",
+          height: "38%",
+          top: "12%",
+          left: "14%",
+          borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(255,230,170,0.4) 0%, transparent 70%)",
+          filter: "blur(4px)",
         }}
       />
-      {/* Crack lines (appear when cracking) */}
+
+      {/* Crack lines */}
       <AnimatePresence>
         {cracking && (
           <motion.svg
-            className="absolute inset-0 w-full h-full"
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
             viewBox="0 0 100 100"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: 0.2 }}
           >
             <motion.path
-              d="M50 15 L45 35 L52 50 L40 70 L48 88"
-              stroke="rgba(60,40,15,0.7)"
-              strokeWidth="1.5"
+              d="M50 12 L44 32 L53 48 L38 68 L47 90"
+              stroke="rgba(30,18,5,0.7)"
+              strokeWidth="1.4"
               fill="none"
               strokeLinecap="round"
               initial={{ pathLength: 0 }}
               animate={{ pathLength: 1 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
+              transition={{ duration: 0.35, ease: "easeOut" }}
             />
             <motion.path
-              d="M50 15 L58 30 L50 45 L62 65 L55 85"
-              stroke="rgba(60,40,15,0.6)"
-              strokeWidth="1.2"
+              d="M50 12 L58 28 L49 44 L63 62 L54 86"
+              stroke="rgba(30,18,5,0.55)"
+              strokeWidth="1.1"
               fill="none"
               strokeLinecap="round"
               initial={{ pathLength: 0 }}
               animate={{ pathLength: 1 }}
-              transition={{ duration: 0.35, ease: "easeOut", delay: 0.05 }}
+              transition={{ duration: 0.4, ease: "easeOut", delay: 0.06 }}
             />
             <motion.path
-              d="M50 30 L35 45 L42 55"
-              stroke="rgba(60,40,15,0.5)"
-              strokeWidth="1"
+              d="M50 28 L34 42 L41 54"
+              stroke="rgba(30,18,5,0.45)"
+              strokeWidth="0.9"
               fill="none"
               strokeLinecap="round"
               initial={{ pathLength: 0 }}
               animate={{ pathLength: 1 }}
-              transition={{ duration: 0.25, ease: "easeOut", delay: 0.1 }}
+              transition={{ duration: 0.28, ease: "easeOut", delay: 0.1 }}
             />
             <motion.path
-              d="M50 30 L68 42 L60 55"
-              stroke="rgba(60,40,15,0.5)"
-              strokeWidth="1"
+              d="M50 28 L68 40 L59 53"
+              stroke="rgba(30,18,5,0.45)"
+              strokeWidth="0.9"
               fill="none"
               strokeLinecap="round"
               initial={{ pathLength: 0 }}
               animate={{ pathLength: 1 }}
-              transition={{ duration: 0.25, ease: "easeOut", delay: 0.12 }}
+              transition={{ duration: 0.28, ease: "easeOut", delay: 0.12 }}
             />
           </motion.svg>
         )}
       </AnimatePresence>
-      {/* Monogram */}
+
+      {/* Monogram — gold foil pressed into wax */}
       <span
-        className="relative font-script text-white"
         style={{
-          fontSize: "clamp(1.2rem, 5vw, 1.8rem)",
-          textShadow: "0 1px 3px rgba(74,60,36,0.7), 0 0 8px rgba(201,168,92,0.4)",
+          position: "relative",
+          fontFamily: "var(--font-script), 'Great Vibes', cursive",
+          fontSize: "clamp(1rem, 4.5vw, 1.5rem)",
+          color: "#E6CE88",
+          textShadow:
+            "0 1px 2px rgba(30,18,5,0.8), 0 0 6px rgba(201,168,92,0.3), inset 0 1px 1px rgba(255,230,170,0.2)",
+          letterSpacing: "0.02em",
         }}
       >
         {monogram}
@@ -166,43 +166,64 @@ function WaxSeal({ cracking, monogram }: { cracking: boolean; monogram: string }
   );
 }
 
-/* Paper texture overlay */
-function PaperTexture({ className, opacity = 0.4 }: { className?: string; opacity?: number }) {
+/* ═══════════════════════════════════════════════════════════
+   GOLD FOIL MONOGRAM — for envelope front
+   ═══════════════════════════════════════════════════════════ */
+function GoldFoilMonogram({ text }: { text: string }) {
   return (
-    <div
-      className={className}
-      aria-hidden
+    <span
       style={{
-        backgroundImage:
-          "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.85 0 0 0 0 0.78 0 0 0 0 0.6 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E\")",
-        opacity,
-        mixBlendMode: "multiply",
+        fontFamily: "var(--font-script), 'Great Vibes', cursive",
+        background:
+          "linear-gradient(105deg, #A8863F 0%, #E6CE88 30%, #FBF3E2 50%, #D4B876 70%, #A8863F 100%)",
+        backgroundSize: "200% auto",
+        WebkitBackgroundClip: "text",
+        backgroundClip: "text",
+        color: "transparent",
+        animation: "goldShine 8s linear infinite",
+        letterSpacing: "0.04em",
       }}
-    />
+    >
+      {text}
+    </span>
   );
 }
 
-export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
-  const { playSound, startMusic, stopMusic } = useAudio();
+/* ═══════════════════════════════════════════════════════════
+   TYPES
+   ═══════════════════════════════════════════════════════════ */
+type Phase = "void" | "sealed" | "cracking" | "opening" | "revealed";
+
+/* ═══════════════════════════════════════════════════════════
+   MAIN COMPONENT
+   ═══════════════════════════════════════════════════════════ */
+export default function EnvelopeIntro({
+  onOpen,
+}: {
+  onOpen: () => void;
+}) {
+  const { playSound, startMusic } = useAudio();
   const guestName = useGuestName();
-  const [state, setState] = useState<EnvelopeState>("sealed");
+  const [phase, setPhase] = useState<Phase>("void");
   const [sealCracking, setSealCracking] = useState(false);
   const [sealGone, setSealGone] = useState(false);
   const [flapOpen, setFlapOpen] = useState(false);
   const [cardOut, setCardOut] = useState(false);
+  const [envelopeGone, setEnvelopeGone] = useState(false);
   const [showScrollHint, setShowScrollHint] = useState(false);
-  const [zoomIn, setZoomIn] = useState(false);
-  const [sceneOpen, setSceneOpen] = useState(false);
-  const [introVisible, setIntroVisible] = useState(false);
-  const sectionRef = useRef<HTMLElement>(null);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
+  const { monogram, bride, groom } = weddingData.couple;
+  const { display: dateDisplay } = weddingData.date;
+  const { name: venueName } = weddingData.venues.ceremony;
+
+  /* ── Fade in from darkness ── */
   useEffect(() => {
-    const t = setTimeout(() => setIntroVisible(true), 600);
+    const t = setTimeout(() => setPhase("sealed"), 800);
     return () => clearTimeout(t);
   }, []);
 
-  // Clear all timers on unmount
+  /* ── Clear timers on unmount ── */
   useEffect(() => () => timersRef.current.forEach(clearTimeout), []);
 
   const addTimer = (fn: () => void, ms: number) => {
@@ -210,598 +231,672 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
     timersRef.current.push(t);
   };
 
+  /* ═══════════════════════════════════════════════════════════
+     OPEN SEQUENCE — slow, deliberate, cinematic (~3s)
+     ═══════════════════════════════════════════════════════════ */
   const openEnvelope = useCallback(() => {
-    if (state !== "sealed") return;
-    setState("cracking");
+    if (phase !== "sealed") return;
 
-    // Phase 1: Wax cracks (0ms)
-    haptic(30);
-    playSound("wax-crack", 0.7);
+    /* Phase 1: Wax cracks (0ms) */
+    setPhase("cracking");
+    haptic(25);
+    playSound("wax-crack", 0.6);
     setSealCracking(true);
 
-    // Phase 2: Wax pieces fall away (500ms)
+    /* Phase 2: Wax falls away (600ms) */
     addTimer(() => {
-      haptic([15, 20, 15]);
+      haptic([12, 15, 12]);
       setSealGone(true);
-    }, 500);
+    }, 600);
 
-    // Phase 3: Flap lifts slowly (800ms — 2400ms, 1.6s duration)
+    /* Phase 3: Flap lifts slowly (900ms — 2.1s, 1.2s duration) */
     addTimer(() => {
-      setState("opening");
-      playSound("paper-unfold", 0.5);
-      haptic(20);
+      setPhase("opening");
+      playSound("paper-unfold", 0.45);
+      haptic(15);
       setFlapOpen(true);
-    }, 800);
+    }, 900);
 
-    // Phase 4: Invitation card slides up (2600ms — 4200ms, 1.6s duration)
+    /* Phase 4: Card slides up (2200ms — 3.2s, 1s duration) */
     addTimer(() => {
-      setState("sliding");
       playSound("paper-unfold", 0.3);
       setCardOut(true);
-    }, 2600);
+    }, 2200);
 
-    // Phase 5: Card locks + camera zoom + music fades in (4400ms)
+    /* Phase 5: Envelope fades away — scene change (3400ms) */
     addTimer(() => {
-      haptic([10, 30, 10]);
-      playSound("chime", 0.5);
-      setZoomIn(true);
+      haptic([8, 20, 8]);
+      playSound("chime", 0.4);
       startMusic();
-      setState("open");
-    }, 4400);
+      setEnvelopeGone(true);
+      setPhase("revealed");
+    }, 3400);
 
-    // Phase 6: The wedding world forms around the physical card (5000ms)
-    addTimer(() => {
-      setSceneOpen(true);
-    }, 5000);
-
-    // Phase 7: Scroll hint appears after the world has settled (6800ms)
+    /* Phase 6: Scroll hint (4200ms) */
     addTimer(() => {
       setShowScrollHint(true);
-    }, 6800);
+    }, 4200);
 
-    // Phase 8: Notify parent after the first cinematic moment finishes (7200ms)
-    addTimer(() => onOpen(), 7200);
-  }, [state, playSound, startMusic, onOpen]);
+    /* Phase 7: Notify parent (4600ms) */
+    addTimer(() => onOpen(), 4600);
+  }, [phase, playSound, startMusic, onOpen]);
 
-  const closeEnvelope = useCallback(() => {
-    if (state !== "open") return;
-    setState("closing");
-    stopMusic();
-    setShowScrollHint(false);
-    setZoomIn(false);
-    setSceneOpen(false);
+  /* ═══════════════════════════════════════════════════════════
+     RENDER
+     ═══════════════════════════════════════════════════════════ */
 
-    // Card slides back down (200ms — 1400ms)
-    addTimer(() => {
-      setCardOut(false);
-      playSound("paper-unfold", 0.3);
-    }, 200);
+  /* Muted, rich color palette */
+  const paperColor =
+    "linear-gradient(168deg, #E8DFC8 0%, #DDD0B4 35%, #CDBE9C 70%, #B8A682 100%)";
+  const flapColor =
+    "linear-gradient(172deg, #E2D6BC 0%, #D4C5A4 50%, #BEAE88 100%)";
+  const flapBack =
+    "linear-gradient(172deg, #D4C5A4 0%, #C4B290 50%, #AE9C72 100%)";
+  const cardColor =
+    "linear-gradient(175deg, #F5EEDC 0%, #EDE3CC 40%, #E0D3B6 100%)";
 
-    // Flap closes (1600ms — 2800ms)
-    addTimer(() => {
-      setFlapOpen(false);
-      playSound("paper-unfold", 0.4);
-      haptic(15);
-    }, 1600);
-
-    // Wax seal reforms (3000ms)
-    addTimer(() => {
-      setSealGone(false);
-      setSealCracking(false);
-      playSound("seal-pop", 0.4);
-      haptic(20);
-    }, 3000);
-
-    // Settle (3400ms)
-    addTimer(() => {
-      setState("sealed");
-    }, 3400);
-  }, [state, stopMusic, playSound]);
-
-  // Bidirectional: when scrolled back to top, close envelope
-  useEffect(() => {
-    if (state !== "open") return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting && e.intersectionRatio > 0.85) {
-            closeEnvelope();
-          }
-        });
-      },
-      { threshold: [0.85] }
-    );
-    const el = sectionRef.current;
-    if (el) observer.observe(el);
-    return () => observer.disconnect();
-  }, [state, closeEnvelope]);
-
-  const { monogram } = weddingData.couple;
-
-  // Photorealistic paper colors
-  const envelopeBody = "linear-gradient(170deg, #F5EFD8 0%, #EDE3C8 30%, #E2D4B0 70%, #D4C49A 100%), radial-gradient(ellipse 60% 40% at 30% 15%, rgba(255,250,235,0.5) 0%, transparent 60%), radial-gradient(ellipse 50% 50% at 80% 85%, rgba(120,100,50,0.12) 0%, transparent 55%)";
-  const flapFace = "linear-gradient(175deg, #F0E6CC 0%, #E8DAB4 50%, #D8C8A0 100%)";
-  const flapBack = "linear-gradient(175deg, #E8DAB4 0%, #DCC9A0 50%, #C9B888 100%)";
-  const cardFace = "linear-gradient(175deg, #FFFDF7 0%, #FAF4E6 40%, #F3E9D2 100%)";
-  const goldEdge = "1px solid rgba(180,150,80,0.4)";
-
-  // Envelope dimensions — portrait, mobile-first: dominates width while respecting viewport height
-  const envW = "min(86vw, 72dvh)";
+  /* Envelope sizing — dominates mobile screen */
+  const envWidth = "min(88vw, 380px)";
 
   return (
     <section
-      ref={sectionRef}
-      className="relative flex flex-col items-center justify-center overflow-hidden"
       style={{
+        position: "relative",
         height: "100dvh",
-        maxHeight: "100dvh",
-        minHeight: "100dvh",
-        background: sceneOpen
-          ? "radial-gradient(ellipse 80% 55% at 50% 18%, rgba(255,246,218,0.42) 0%, transparent 54%), linear-gradient(180deg, #1F271C 0%, #2F241A 45%, #120E0A 100%)"
-          : "radial-gradient(ellipse 90% 70% at 50% 40%, #2A2520 0%, #1C1814 50%, #100E0A 100%)",
-        transition: "background 1.8s cubic-bezier(0.16, 1, 0.3, 1)",
-        willChange: "opacity, background",
+        width: "100%",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        background: envelopeGone
+          ? "linear-gradient(180deg, #1A1714 0%, #221E18 40%, #1A1714 100%)"
+          : "radial-gradient(ellipse 85% 65% at 50% 45%, #1E1B16 0%, #15120E 55%, #0A0907 100%)",
+        transition: "background 2s cubic-bezier(0.25, 0.1, 0.25, 1)",
       }}
     >
-      {/* ===== SUBTLE VIGNETTE ===== */}
+      {/* ═══ AMBIENT VIGNETTE ═══ */}
       <div
-        className="absolute inset-0 pointer-events-none"
         style={{
-          background: "radial-gradient(ellipse 80% 60% at 50% 50%, transparent 40%, rgba(0,0,0,0.5) 100%)",
+          position: "absolute",
+          inset: 0,
+          background:
+            "radial-gradient(ellipse 75% 55% at 50% 50%, transparent 35%, rgba(0,0,0,0.45) 100%)",
+          pointerEvents: "none",
         }}
       />
 
-      <AnimatePresence>
-        {sceneOpen && (
-          <motion.div
-            className="absolute inset-0 pointer-events-none"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1.8, ease: EASE_PAPER }}
-          >
-            <motion.div
-              className="absolute left-1/2 top-[8vh] -translate-x-1/2 rounded-t-full"
-              initial={{ opacity: 0, scale: 0.88, y: 40 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ duration: 1.7, ease: EASE_PAPER }}
-              style={{
-                width: "min(470px, 108vw)",
-                height: "min(540px, 118vw)",
-                border: "1px solid rgba(201,168,92,0.35)",
-                borderBottom: "none",
-                boxShadow: "0 0 60px rgba(201,168,92,0.18), inset 0 0 36px rgba(201,168,92,0.08)",
-              }}
-            />
-
-            {[...Array(26)].map((_, i) => (
-              <motion.span
-                key={`flower-${i}`}
-                className="absolute rounded-full"
-                initial={{ opacity: 0, scale: 0.2 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 1.1, delay: 0.2 + (i % 8) * 0.08, ease: EASE_PAPER }}
-                style={{
-                  left: `${8 + ((i * 13) % 84)}%`,
-                  top: `${10 + ((i * 19) % 46)}%`,
-                  width: `${10 + (i % 4) * 4}px`,
-                  height: `${10 + (i % 4) * 4}px`,
-                  background: i % 3 === 0
-                    ? "radial-gradient(circle at 35% 35%, #FFF8E7 0%, #EAD7B4 55%, rgba(234,215,180,0) 72%)"
-                    : "radial-gradient(circle at 35% 35%, #F7E8D2 0%, #C9A85C 48%, rgba(201,168,92,0) 72%)",
-                  filter: "blur(0.1px)",
-                }}
-              />
-            ))}
-
-            {[...Array(14)].map((_, i) => (
-              <motion.span
-                key={`petal-${i}`}
-                className="absolute rounded-full"
-                initial={{ opacity: 0, y: -30, rotate: 0 }}
-                animate={{ opacity: [0, 0.7, 0.15], y: [0, 130 + i * 6], rotate: [0, 120 + i * 18] }}
-                transition={{ duration: 7 + (i % 5), repeat: Infinity, delay: i * 0.35, ease: "easeInOut" }}
-                style={{
-                  left: `${6 + ((i * 17) % 88)}%`,
-                  top: `${6 + (i % 4) * 6}%`,
-                  width: `${7 + (i % 3)}px`,
-                  height: `${11 + (i % 4)}px`,
-                  background: "linear-gradient(135deg, rgba(255,246,225,0.85), rgba(201,168,92,0.45))",
-                  borderRadius: "70% 30% 70% 30%",
-                }}
-              />
-            ))}
-
-            {[...Array(4)].map((_, i) => (
-              <motion.div
-                key={`candle-${i}`}
-                className="absolute bottom-[13vh]"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1.2, delay: 0.45 + i * 0.12, ease: EASE_PAPER }}
-                style={{ left: `${12 + i * 24}%` }}
-              >
-                <div className="relative w-[8px] h-[38px] rounded-sm bg-[#F4E8CF]/80 shadow-[0_0_18px_rgba(255,230,160,0.22)]">
-                  <motion.span
-                    className="absolute left-1/2 -top-3 block w-[10px] h-[16px] -translate-x-1/2 rounded-full"
-                    animate={{ scale: [1, 1.14, 0.94, 1], opacity: [0.75, 1, 0.72, 0.9] }}
-                    transition={{ duration: 1.8, repeat: Infinity, delay: i * 0.2 }}
-                    style={{ background: "radial-gradient(ellipse, #FFE6A0 0%, rgba(255,180,70,0.4) 42%, transparent 72%)" }}
-                  />
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ===== FLOATING DUST PARTICLES (subtle, cinematic) ===== */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden>
-        {[...Array(8)].map((_, i) => (
+      {/* ═══ AMBIENT PARTICLES — tiny, slow, cinematic ═══ */}
+      <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }} aria-hidden>
+        {[...Array(6)].map((_, i) => (
           <span
             key={i}
-            className="absolute rounded-full"
             style={{
-              left: `${10 + (i * 11) % 80}%`,
-              bottom: `${-5 + (i % 3) * 8}%`,
-              width: `${2 + (i % 2)}px`,
-              height: `${2 + (i % 2)}px`,
-              background: "radial-gradient(circle, rgba(230,206,136,0.6), transparent)",
-              animation: `floatUp ${18 + (i % 4) * 4}s linear infinite`,
-              animationDelay: `${-i * 3}s`,
-              opacity: 0.3,
+              position: "absolute",
+              left: `${15 + (i * 14) % 70}%`,
+              bottom: `${-8 + (i % 3) * 12}%`,
+              width: `${1.5 + (i % 2)}px`,
+              height: `${1.5 + (i % 2)}px`,
+              borderRadius: "50%",
+              background: "radial-gradient(circle, rgba(200,180,130,0.5), transparent)",
+              animation: `floatUp ${20 + (i % 4) * 5}s linear infinite`,
+              animationDelay: `${-i * 4}s`,
+              opacity: 0.25,
             }}
           />
         ))}
       </div>
 
-      {/* ===== GREETING (minimal — only guest name, very small) ===== */}
+      {/* ═══ ENVELOPE SCENE (disappears after opening) ═══ */}
       <AnimatePresence>
-        {state === "sealed" && guestName && (
+        {!envelopeGone && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92, filter: "blur(10px)" }}
+            animate={{
+              opacity: phase === "void" ? 0 : 1,
+              scale: phase === "void" ? 0.92 : 1,
+              filter: phase === "void" ? "blur(10px)" : "blur(0px)",
+            }}
+            exit={{ opacity: 0, scale: 1.06, filter: "blur(6px)" }}
+            transition={{ duration: 2.5, ease: EASE_GLIDE }}
+            style={{
+              position: "relative",
+              width: envWidth,
+              aspectRatio: "3 / 4.1",
+              perspective: "1200px",
+              perspectiveOrigin: "50% 35%",
+            }}
+          >
+            {/* Idle floating wrapper */}
+            <motion.div
+              animate={
+                phase === "sealed"
+                  ? { y: [0, -6, 0, 4, 0], rotateZ: [-0.2, 0.15, -0.1, 0] }
+                  : { y: 0, rotateZ: 0 }
+              }
+              transition={
+                phase === "sealed"
+                  ? { duration: 6, repeat: Infinity, ease: "easeInOut" }
+                  : { duration: 1, ease: EASE_GLIDE }
+              }
+              style={{
+                position: "absolute",
+                inset: 0,
+                transformStyle: "preserve-3d",
+              }}
+            >
+              {/* ════ ENVELOPE BODY (back/pocket) ════ */}
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  borderRadius: "3px",
+                  background: paperColor,
+                  boxShadow:
+                    "0 3px 10px rgba(0,0,0,0.3), 0 18px 45px rgba(0,0,0,0.35), 0 50px 100px rgba(0,0,0,0.5), inset 0 2px 5px rgba(255,245,220,0.2), inset 0 -3px 10px rgba(100,80,40,0.15)",
+                  transformStyle: "preserve-3d",
+                  overflow: "hidden",
+                }}
+              >
+                <PaperGrain opacity={0.35} />
+
+                {/* Warm light from top-left */}
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    background:
+                      "radial-gradient(ellipse 55% 40% at 28% 12%, rgba(255,245,220,0.35) 0%, transparent 60%)",
+                    pointerEvents: "none",
+                  }}
+                />
+
+                {/* Shadow where flap meets body */}
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: "48%",
+                    background:
+                      "linear-gradient(180deg, rgba(0,0,0,0.06) 0%, transparent 100%)",
+                    clipPath: "polygon(0 0, 100% 0, 50% 100%)",
+                    pointerEvents: "none",
+                  }}
+                />
+
+                {/* ════ ENVELOPE INTERIOR (visible when flap opens) ════ */}
+                <div
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    top: "4%",
+                    background:
+                      "linear-gradient(180deg, #C4B290 0%, #B8A678 30%, #A6966A 100%)",
+                    boxShadow: "inset 0 3px 15px rgba(70,50,20,0.25)",
+                  }}
+                >
+                  <PaperGrain opacity={0.2} />
+                </div>
+
+                {/* ════ INVITATION CARD (clipped inside pocket) ════ */}
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    overflow: "hidden",
+                    borderRadius: "3px",
+                    zIndex: 2,
+                  }}
+                >
+                  <motion.div
+                    animate={{
+                      y: cardOut ? "-68%" : "0%",
+                      scale: cardOut ? 1.04 : 1,
+                    }}
+                    transition={{
+                      duration: cardOut ? 1.2 : 1,
+                      ease: EASE_HEAVY,
+                    }}
+                    style={{
+                      position: "absolute",
+                      left: "7%",
+                      right: "7%",
+                      bottom: "5%",
+                      height: "80%",
+                      borderRadius: "2px",
+                      background: cardColor,
+                      boxShadow: cardOut
+                        ? "0 20px 60px rgba(0,0,0,0.35), 0 8px 20px rgba(0,0,0,0.15)"
+                        : "0 0 0 rgba(0,0,0,0)",
+                      overflow: "hidden",
+                      transformOrigin: "bottom center",
+                    }}
+                  >
+                    <PaperGrain opacity={0.28} />
+
+                    {/* Gold border */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: "8px",
+                        border: "1px solid rgba(168,134,63,0.3)",
+                        borderRadius: "1px",
+                        pointerEvents: "none",
+                      }}
+                    />
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: "12px",
+                        border: "0.5px solid rgba(168,134,63,0.18)",
+                        borderRadius: "1px",
+                        pointerEvents: "none",
+                      }}
+                    />
+
+                    {/* Card content */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        textAlign: "center",
+                        padding: "0 16px",
+                      }}
+                    >
+                      <p
+                        style={{
+                          textTransform: "uppercase",
+                          letterSpacing: "0.28em",
+                          color: "#988A76",
+                          fontSize: "clamp(7px, 2.5vw, 9px)",
+                          margin: 0,
+                          marginBottom: "10px",
+                        }}
+                      >
+                        Together with their families
+                      </p>
+                      <p
+                        className="font-script"
+                        style={{
+                          fontSize: "clamp(1.4rem, 7vw, 2rem)",
+                          margin: 0,
+                          lineHeight: 1.1,
+                        }}
+                      >
+                        <GoldFoilMonogram text={bride} />
+                      </p>
+                      <p
+                        className="font-script"
+                        style={{
+                          fontSize: "clamp(1rem, 5vw, 1.5rem)",
+                          color: "#B08D3F",
+                          margin: "2px 0",
+                        }}
+                      >
+                        &
+                      </p>
+                      <p
+                        className="font-script"
+                        style={{
+                          fontSize: "clamp(1.4rem, 7vw, 2rem)",
+                          margin: 0,
+                          lineHeight: 1.1,
+                        }}
+                      >
+                        <GoldFoilMonogram text={groom} />
+                      </p>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          margin: "10px 0",
+                        }}
+                      >
+                        <span
+                          style={{
+                            display: "block",
+                            width: "32px",
+                            height: "1px",
+                            background: "rgba(168,134,63,0.35)",
+                          }}
+                        />
+                        <span style={{ color: "#B08D3F", fontSize: "8px" }}>
+                          ✦
+                        </span>
+                        <span
+                          style={{
+                            display: "block",
+                            width: "32px",
+                            height: "1px",
+                            background: "rgba(168,134,63,0.35)",
+                          }}
+                        />
+                      </div>
+                      <p
+                        className="font-serif-text"
+                        style={{
+                          fontStyle: "italic",
+                          color: "#6E6252",
+                          fontSize: "clamp(10px, 3.5vw, 13px)",
+                          margin: 0,
+                        }}
+                      >
+                        {dateDisplay}
+                      </p>
+                      <p
+                        style={{
+                          color: "#988A76",
+                          fontSize: "clamp(8px, 3vw, 10px)",
+                          margin: 0,
+                          marginTop: "6px",
+                          letterSpacing: "0.05em",
+                        }}
+                      >
+                        {venueName}
+                      </p>
+                    </div>
+                  </motion.div>
+                </div>
+
+                {/* ════ BOTTOM POCKET (front layer — covers card bottom) ════ */}
+                <motion.div
+                  animate={{ rotateX: flapOpen ? 3 : 0 }}
+                  transition={{ duration: 1.2, ease: EASE_GLIDE }}
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    height: "50%",
+                    zIndex: 3,
+                    background:
+                      "linear-gradient(165deg, #DDD0B4 0%, #C8B898 52%, #B8A67E 100%)",
+                    clipPath: "polygon(0 100%, 50% 0, 100% 100%)",
+                    boxShadow:
+                      "inset 0 4px 14px rgba(255,245,220,0.12), inset 0 -6px 16px rgba(70,50,20,0.15), 0 -1px 8px rgba(50,35,12,0.12)",
+                    willChange: "transform",
+                  }}
+                >
+                  <PaperGrain opacity={0.25} />
+                </motion.div>
+
+                {/* ════ LEFT POCKET ════ */}
+                <motion.div
+                  animate={{ rotateY: flapOpen ? -4 : 0 }}
+                  transition={{ duration: 1.2, ease: EASE_GLIDE }}
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: "50%",
+                    zIndex: 4,
+                    background:
+                      "linear-gradient(150deg, #E2D6BC 0%, #D0C0A0 58%, #BCAA82 100%)",
+                    clipPath: "polygon(0 0, 100% 50%, 0 100%)",
+                    boxShadow: "inset -6px 0 14px rgba(80,60,25,0.1)",
+                    willChange: "transform",
+                  }}
+                >
+                  <PaperGrain opacity={0.24} />
+                </motion.div>
+
+                {/* ════ RIGHT POCKET ════ */}
+                <motion.div
+                  animate={{ rotateY: flapOpen ? 4 : 0 }}
+                  transition={{ duration: 1.2, ease: EASE_GLIDE }}
+                  style={{
+                    position: "absolute",
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: "50%",
+                    zIndex: 4,
+                    background:
+                      "linear-gradient(210deg, #E2D6BC 0%, #D0C0A0 58%, #BCAA82 100%)",
+                    clipPath: "polygon(100% 0, 0 50%, 100% 100%)",
+                    boxShadow: "inset 6px 0 14px rgba(80,60,25,0.1)",
+                    willChange: "transform",
+                  }}
+                >
+                  <PaperGrain opacity={0.24} />
+                </motion.div>
+
+                {/* ════ TOP FLAP — 3D rotate, the hero animation ════ */}
+                <motion.div
+                  animate={{ rotateX: flapOpen ? -172 : 0 }}
+                  transition={{
+                    duration: flapOpen ? 1.3 : 1,
+                    ease: EASE_GLIDE,
+                  }}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: "50%",
+                    background: flapColor,
+                    clipPath: "polygon(0 0, 100% 0, 50% 100%)",
+                    transformOrigin: "top center",
+                    transformStyle: "preserve-3d",
+                    zIndex: 5,
+                    boxShadow:
+                      "inset 0 -3px 12px rgba(100,80,40,0.12), 0 2px 6px rgba(0,0,0,0.08), 0 6px 18px rgba(0,0,0,0.1)",
+                    borderBottom: "1px solid rgba(168,134,63,0.25)",
+                    filter: flapOpen
+                      ? "drop-shadow(0 10px 16px rgba(0,0,0,0.25))"
+                      : "none",
+                    willChange: "transform",
+                    overflow: "hidden",
+                  }}
+                >
+                  {/* Back of flap (visible when open) */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      background: flapBack,
+                      backfaceVisibility: "hidden",
+                      transform: "rotateX(180deg)",
+                    }}
+                  >
+                    <PaperGrain opacity={0.28} />
+                  </div>
+
+                  {/* Front texture */}
+                  <PaperGrain opacity={0.28} />
+
+                  {/* Flap edge highlight */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      height: "2px",
+                      background:
+                        "linear-gradient(90deg, rgba(100,80,40,0.08), rgba(255,245,220,0.4), rgba(100,80,40,0.08))",
+                    }}
+                  />
+
+                  {/* Gold foil monogram watermark on flap */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: "50%",
+                      top: "28%",
+                      transform: "translateX(-50%)",
+                      opacity: 0.12,
+                      pointerEvents: "none",
+                    }}
+                  >
+                    <GoldFoilMonogram text={monogram} />
+                  </div>
+                </motion.div>
+
+                {/* ════ WAX SEAL SHADOW (attachment mark) ════ */}
+                <motion.div
+                  animate={{
+                    opacity: sealGone ? 0 : 1,
+                    scale: sealCracking ? 1.06 : 1,
+                  }}
+                  transition={{ duration: 0.4, ease: EASE_GLIDE }}
+                  style={{
+                    position: "absolute",
+                    left: "50%",
+                    top: "48%",
+                    transform: "translate(-50%, -50%)",
+                    width: "clamp(62px, 20vw, 88px)",
+                    height: "clamp(62px, 20vw, 88px)",
+                    borderRadius: "50%",
+                    background:
+                      "radial-gradient(circle, rgba(60,40,15,0.22), rgba(60,40,15,0.06) 46%, transparent 72%)",
+                    filter: "blur(2px)",
+                    zIndex: 8,
+                    pointerEvents: "none",
+                  }}
+                />
+
+                {/* ════ WAX SEAL (tappable) ════ */}
+                <AnimatePresence>
+                  {!sealGone && (
+                    <motion.button
+                      onClick={openEnvelope}
+                      initial={{ scale: 0, opacity: 0, rotate: -15 }}
+                      animate={{
+                        scale: sealCracking ? [1, 1.04, 0.97, 1.01, 1] : 1,
+                        opacity: 1,
+                        rotate: 0,
+                      }}
+                      exit={{
+                        scale: [1, 1.25, 0.75],
+                        opacity: [1, 0.4, 0],
+                        rotate: [0, 6, -4],
+                        y: [0, -8, 24],
+                        transition: { duration: 0.5, ease: EASE_GLIDE },
+                      }}
+                      transition={{ duration: sealCracking ? 0.35 : 0.3 }}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      aria-label="Tap to open your invitation"
+                      style={{
+                        position: "absolute",
+                        left: "50%",
+                        top: "48%",
+                        transform: "translate(-50%, -50%)",
+                        width: "clamp(56px, 18vw, 80px)",
+                        height: "clamp(56px, 18vw, 80px)",
+                        borderRadius: "50%",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: 0,
+                        zIndex: 10,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {/* Pulsing ring */}
+                      {phase === "sealed" && (
+                        <span
+                          style={{
+                            position: "absolute",
+                            inset: "-8px",
+                            borderRadius: "50%",
+                            border: "1.5px solid rgba(168,134,63,0.35)",
+                            animation: "pulseRing 3s ease-out infinite",
+                            pointerEvents: "none",
+                          }}
+                        />
+                      )}
+                      <WaxSeal cracking={sealCracking} monogram={monogram} />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
+
+                {/* ════ GROUND SHADOW ════ */}
+                <div
+                  style={{
+                    position: "absolute",
+                    left: "50%",
+                    bottom: "-16px",
+                    transform: "translateX(-50%)",
+                    width: "82%",
+                    height: "24px",
+                    borderRadius: "50%",
+                    background:
+                      "radial-gradient(ellipse, rgba(0,0,0,0.35) 0%, transparent 70%)",
+                    filter: "blur(8px)",
+                    pointerEvents: "none",
+                  }}
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ═══ GREETING (guest name — minimal, above envelope) ═══ */}
+      <AnimatePresence>
+        {phase === "sealed" && guestName && (
           <motion.p
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.7 }}
+            animate={{ opacity: 0.55 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 1.5, delay: 0.8 }}
-            className="absolute top-[12vh] left-1/2 -translate-x-1/2 z-10 font-script text-[#C9A85C] text-lg md:text-xl tracking-wide"
+            transition={{ duration: 1.8, delay: 1 }}
+            style={{
+              position: "absolute",
+              top: "11vh",
+              left: "50%",
+              transform: "translateX(-50%)",
+              fontFamily: "var(--font-script), 'Great Vibes', cursive",
+              color: "#B08D3F",
+              fontSize: "clamp(0.95rem, 4vw, 1.15rem)",
+              letterSpacing: "0.03em",
+              margin: 0,
+              zIndex: 5,
+            }}
           >
             Dear {guestName}
           </motion.p>
         )}
       </AnimatePresence>
 
-      {/* ===== ENVELOPE STAGE (with camera zoom) ===== */}
-      <motion.div
-        className="relative z-10"
-        initial={{ opacity: 0, scale: 0.94, filter: "blur(8px)" }}
-        animate={{
-          opacity: introVisible ? 1 : 0,
-          scale: !introVisible ? 0.94 : sceneOpen ? 1.12 : zoomIn ? 1.08 : 1,
-          y: sceneOpen ? -12 : 0,
-          filter: introVisible ? "blur(0px)" : "blur(8px)",
-        }}
-        style={{
-          width: envW,
-          aspectRatio: "320 / 440",
-          perspective: "1400px",
-          perspectiveOrigin: "50% 40%",
-          transformStyle: "preserve-3d",
-        }}
-        transition={{ duration: introVisible ? 2.5 : 0.2, ease: EASE_PAPER }}
-      >
-        {/* ===== ENVELOPE BODY (back layer — the pocket) ===== */}
-        <motion.div
-          className="absolute inset-0 rounded-[4px]"
-          animate={
-            state === "sealed" && introVisible
-              ? { y: [0, -5, 0, 3, 0], rotateZ: [-0.25, 0.18, -0.12, 0] }
-              : { y: 0, rotateZ: 0 }
-          }
-          transition={
-            state === "sealed" && introVisible
-              ? { duration: 5.5, repeat: Infinity, ease: "easeInOut" }
-              : { duration: 0.8, ease: EASE_PAPER }
-          }
-          style={{
-            background: envelopeBody,
-            boxShadow:
-              "0 4px 12px rgba(0,0,0,0.35), 0 20px 50px rgba(0,0,0,0.4), 0 60px 120px rgba(0,0,0,0.55), inset 0 2px 6px rgba(255,250,235,0.3), inset 0 -4px 12px rgba(120,100,50,0.2)",
-            transformStyle: "preserve-3d",
-            willChange: "transform",
-          }}
-        >
-          {/* Paper texture on body */}
-          <PaperTexture className="absolute inset-0 rounded-[4px]" opacity={0.35} />
-
-          {/* Subtle inner shadow at top (where flap meets body) */}
-          <div
-            className="absolute top-0 left-0 right-0 pointer-events-none"
-            style={{
-              height: "50%",
-              background: "linear-gradient(180deg, rgba(0,0,0,0.08) 0%, transparent 100%)",
-              clipPath: "polygon(0 0, 100% 0, 50% 100%)",
-            }}
-          />
-
-          {/* ===== ENVELOPE INTERIOR (dark, visible when flap opens) ===== */}
-          <div
-            className="absolute left-0 right-0 bottom-0 rounded-b-[4px] overflow-hidden"
-            style={{
-              top: "5%",
-              background: "linear-gradient(180deg, #D8C8A0 0%, #C9B888 30%, #B8A678 100%)",
-              boxShadow: "inset 0 4px 20px rgba(80,60,20,0.3)",
-            }}
-          >
-            <PaperTexture className="absolute inset-0" opacity={0.25} />
-          </div>
-
-          {/* ===== INVITATION CARD (slides up from inside — clipped by pocket) ===== */}
-          <div
-            className="absolute left-0 right-0 bottom-0 top-0 overflow-hidden rounded-[4px]"
-            style={{ zIndex: 2 }}
-          >
-          <motion.div
-            className="absolute left-[6%] right-[6%] rounded-[3px] overflow-hidden"
-            style={{
-              bottom: "4%",
-              height: "82%",
-              background: cardFace,
-              boxShadow: cardOut
-                ? "0 30px 80px rgba(0,0,0,0.4), 0 10px 30px rgba(0,0,0,0.2)"
-                : "0 0 0 rgba(0,0,0,0)",
-              willChange: "transform",
-              transformOrigin: "bottom center",
-            }}
-            animate={{
-              y: sceneOpen ? "-86%" : cardOut ? "-72%" : "0%",
-              scale: sceneOpen ? 1.1 : cardOut ? 1.05 : 1,
-            }}
-            transition={{
-              duration: cardOut ? 1.6 : 1.2,
-              ease: cardOut ? EASE_SLIDE : EASE_CLOSE,
-            }}
-          >
-            {/* Paper texture on card */}
-            <PaperTexture className="absolute inset-0" opacity={0.3} />
-
-            {/* Gold border */}
-            <div className="absolute inset-2 rounded-[2px] pointer-events-none" style={{ border: "1px solid rgba(201,168,92,0.35)" }} />
-            <div className="absolute inset-3 rounded-[1px] pointer-events-none" style={{ border: "0.5px solid rgba(201,168,92,0.2)" }} />
-
-            {/* Corner flourishes */}
-            <Flourish className="absolute top-2 left-2" size={32} />
-            <Flourish className="absolute top-2 right-2" size={32} style={{ transform: "scaleX(-1)" }} />
-            <Flourish className="absolute bottom-2 left-2" size={32} style={{ transform: "scaleY(-1)" }} />
-            <Flourish className="absolute bottom-2 right-2" size={32} style={{ transform: "scale(-1)" }} />
-
-            {/* Card content */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-5">
-              <p className="uppercase tracking-[0.3em] text-[#A8863F] text-[8px] md:text-[10px] mb-3">
-                Together with their families
-              </p>
-              <p className="font-script text-gold-foil text-2xl md:text-4xl leading-tight">
-                {weddingData.couple.bride}
-              </p>
-              <p className="font-script text-[#C9A85C] text-xl md:text-3xl my-0.5">&amp;</p>
-              <p className="font-script text-gold-foil text-2xl md:text-4xl leading-tight">
-                {weddingData.couple.groom}
-              </p>
-              <div className="my-3 flex items-center gap-2">
-                <span className="block w-12 h-px bg-[#C9A85C]/40" />
-                <span className="text-[#C9A85C] text-[10px]">✦</span>
-                <span className="block w-12 h-px bg-[#C9A85C]/40" />
-              </div>
-              <p className="font-serif-text italic text-[#6E6252] text-xs md:text-sm">
-                {weddingData.date.display}
-              </p>
-              <p className="text-[#988A76] text-[9px] md:text-[11px] mt-1.5 tracking-wider">
-                {weddingData.venues.ceremony.name}
-              </p>
-            </div>
-          </motion.div>
-          </div>
-
-          <motion.div
-            className="absolute left-0 right-0 bottom-0 overflow-hidden rounded-b-[4px]"
-            style={{
-              height: "52%",
-              zIndex: 3,
-              background: "linear-gradient(165deg, #EDE1BF 0%, #D8C8A0 52%, #C6B17E 100%)",
-              clipPath: "polygon(0 100%, 50% 0, 100% 100%)",
-              boxShadow: "inset 0 5px 18px rgba(255,250,230,0.18), inset 0 -8px 20px rgba(80,60,20,0.18), 0 -2px 12px rgba(65,45,18,0.16)",
-              willChange: "transform",
-            }}
-            animate={{ rotateX: flapOpen ? 4 : 0 }}
-            transition={{ duration: 1.4, ease: EASE_FLAP }}
-          >
-            <PaperTexture className="absolute inset-0" opacity={0.28} />
-          </motion.div>
-
-          <motion.div
-            className="absolute left-0 top-0 bottom-0 rounded-l-[4px]"
-            style={{
-              width: "50%",
-              zIndex: 4,
-              background: "linear-gradient(150deg, #F0E6CC 0%, #DECFAB 58%, #CBB989 100%)",
-              clipPath: "polygon(0 0, 100% 50%, 0 100%)",
-              boxShadow: "inset -8px 0 18px rgba(90,70,30,0.12)",
-              willChange: "transform",
-            }}
-            animate={{ rotateY: flapOpen ? -5 : 0 }}
-            transition={{ duration: 1.4, ease: EASE_FLAP }}
-          >
-            <PaperTexture className="absolute inset-0" opacity={0.26} />
-          </motion.div>
-
-          <motion.div
-            className="absolute right-0 top-0 bottom-0 rounded-r-[4px]"
-            style={{
-              width: "50%",
-              zIndex: 4,
-              background: "linear-gradient(210deg, #F0E6CC 0%, #DECFAB 58%, #CBB989 100%)",
-              clipPath: "polygon(100% 0, 0 50%, 100% 100%)",
-              boxShadow: "inset 8px 0 18px rgba(90,70,30,0.12)",
-              willChange: "transform",
-            }}
-            animate={{ rotateY: flapOpen ? 5 : 0 }}
-            transition={{ duration: 1.4, ease: EASE_FLAP }}
-          >
-            <PaperTexture className="absolute inset-0" opacity={0.26} />
-          </motion.div>
-
-          {/* ===== TOP FLAP (the main flap that lifts open) ===== */}
-          <motion.div
-            className="absolute top-0 left-0 right-0 overflow-hidden rounded-t-[4px]"
-            style={{
-              height: "52%",
-              background: flapFace,
-              clipPath: "polygon(0 0, 100% 0, 50% 100%)",
-              transformOrigin: "top center",
-              transformStyle: "preserve-3d",
-              willChange: "transform",
-              zIndex: 5,
-              boxShadow: "inset 0 -4px 16px rgba(120,100,50,0.15), 0 2px 8px rgba(0,0,0,0.1), 0 8px 24px rgba(0,0,0,0.12)",
-              borderBottom: "1px solid rgba(180,150,80,0.3)",
-              filter: flapOpen ? "drop-shadow(0 12px 20px rgba(0,0,0,0.3))" : "none",
-            }}
-            animate={{
-              rotateX: flapOpen ? -175 : 0,
-            }}
-            transition={{
-              duration: flapOpen ? 1.6 : 1.2,
-              ease: flapOpen ? EASE_FLAP : EASE_CLOSE,
-            }}
-          >
-            {/* Back of flap (visible when folded open) */}
-            <div
-              className="absolute inset-0"
-              style={{
-                background: flapBack,
-                backfaceVisibility: "hidden",
-                transform: "rotateX(180deg)",
-              }}
-            >
-              <PaperTexture className="absolute inset-0" opacity={0.3} />
-            </div>
-
-            {/* Front of flap texture */}
-            <PaperTexture className="absolute inset-0" opacity={0.3} />
-            <div
-              className="absolute left-0 right-0 bottom-0"
-              style={{
-                height: "3px",
-                background: "linear-gradient(90deg, rgba(120,95,45,0.1), rgba(255,246,218,0.5), rgba(120,95,45,0.1))",
-                boxShadow: "0 2px 4px rgba(70,45,15,0.2)",
-              }}
-            />
-
-            {/* Flap filigree */}
-            <Flourish className="absolute top-2 left-2" size={36} />
-            <Flourish className="absolute top-2 right-2" size={36} style={{ transform: "scaleX(-1)" }} />
-
-            {/* Monogram watermark on flap */}
-            <div
-              className="absolute left-1/2 top-[30%] -translate-x-1/2 font-script pointer-events-none"
-              style={{
-                fontSize: "clamp(1.8rem, 7vw, 2.5rem)",
-                color: "rgba(201,168,92,0.12)",
-              }}
-              aria-hidden
-            >
-              {monogram}
-            </div>
-          </motion.div>
-
-          <motion.div
-            className="absolute left-1/2 top-[48%] -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none"
-            style={{
-              width: "clamp(74px, 24vw, 104px)",
-              height: "clamp(74px, 24vw, 104px)",
-              zIndex: 9,
-              background: "radial-gradient(circle, rgba(95,65,25,0.28), rgba(95,65,25,0.08) 46%, transparent 72%)",
-              filter: "blur(2px)",
-              willChange: "opacity, transform",
-            }}
-            animate={{ opacity: sealGone ? 0 : 1, scale: sealCracking ? 1.08 : 1 }}
-            transition={{ duration: 0.4, ease: EASE_PAPER }}
-          />
-
-          {/* ===== WAX SEAL ===== */}
-          <AnimatePresence>
-            {!sealGone && (
-              <motion.button
-                onClick={openEnvelope}
-                className="absolute left-1/2 top-[48%] -translate-x-1/2 -translate-y-1/2 rounded-full cursor-pointer flex items-center justify-center"
-                style={{
-                  width: "clamp(68px, 22vw, 96px)",
-                  height: "clamp(68px, 22vw, 96px)",
-                  zIndex: 10,
-                  willChange: "transform, opacity",
-                }}
-                initial={{ scale: 0, opacity: 0, rotate: -20 }}
-                animate={{
-                  scale: sealCracking ? [1, 1.05, 0.98, 1.02, 1] : 1,
-                  opacity: 1,
-                  rotate: 0,
-                }}
-                exit={{
-                  scale: [1, 1.3, 0.8],
-                  opacity: [1, 0.5, 0],
-                  rotate: [0, 8, -5],
-                  y: [0, -10, 30],
-                  transition: { duration: 0.5, ease: EASE_CRACK },
-                }}
-                transition={{
-                  duration: sealCracking ? 0.4 : 0.3,
-                }}
-                whileHover={{ scale: 1.06 }}
-                whileTap={{ scale: 0.94 }}
-                aria-label="Tap to open your invitation"
-              >
-                {/* Pulsing glow ring (only when sealed) */}
-                {state === "sealed" && (
-                  <span
-                    className="absolute rounded-full pointer-events-none"
-                    style={{
-                      inset: "-10px",
-                      border: "2px solid rgba(201,168,92,0.4)",
-                      animation: "pulseRing 2.5s ease-out infinite",
-                    }}
-                  />
-                )}
-                <WaxSeal cracking={sealCracking} monogram={monogram} />
-              </motion.button>
-            )}
-          </AnimatePresence>
-
-          {/* ===== ENVELOPE SHADOW ON GROUND ===== */}
-          <div
-            className="absolute left-1/2 -translate-x-1/2 rounded-full pointer-events-none"
-            style={{
-              bottom: "-20px",
-              width: "85%",
-              height: "30px",
-              background: "radial-gradient(ellipse, rgba(0,0,0,0.4) 0%, transparent 70%)",
-              filter: "blur(10px)",
-            }}
-          />
-        </motion.div>
-      </motion.div>
-
-      {/* ===== TAP HINT (minimal, below envelope) ===== */}
+      {/* ═══ TAP HINT ═══ */}
       <AnimatePresence>
-        {state === "sealed" && (
+        {phase === "sealed" && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 1, delay: 1.2 }}
-            className="absolute bottom-[10vh] left-1/2 -translate-x-1/2 z-10 text-center"
+            transition={{ duration: 1.2, delay: 1.5 }}
+            style={{
+              position: "absolute",
+              bottom: "9vh",
+              left: "50%",
+              transform: "translateX(-50%)",
+              textAlign: "center",
+              zIndex: 5,
+            }}
           >
             <motion.p
-              className="font-script text-[#C9A85C] text-base md:text-lg"
-              animate={{ opacity: [0.4, 0.8, 0.4] }}
-              transition={{ duration: 2.5, repeat: Infinity }}
+              animate={{ opacity: [0.35, 0.7, 0.35] }}
+              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+              style={{
+                fontFamily: "var(--font-script), 'Great Vibes', cursive",
+                color: "#B08D3F",
+                fontSize: "clamp(0.85rem, 3.5vw, 1rem)",
+                margin: 0,
+              }}
             >
               Tap the seal
             </motion.p>
@@ -809,31 +904,70 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
         )}
       </AnimatePresence>
 
-      {/* ===== SCROLL HINT (after envelope opens) ===== */}
+      {/* ═══ SCROLL HINT (after reveal) ═══ */}
       <AnimatePresence>
         {showScrollHint && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.8 }}
-            className="absolute bottom-[6vh] left-1/2 -translate-x-1/2 z-10 text-center"
+            transition={{ duration: 1, ease: EASE_GLIDE }}
+            style={{
+              position: "absolute",
+              bottom: "5vh",
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 5,
+            }}
           >
             <motion.div
-              animate={{ y: [0, 8, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              className="flex flex-col items-center gap-1"
+              animate={{ y: [0, 6, 0] }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "4px",
+              }}
             >
-              <span className="text-[#C9A85C] text-[10px] uppercase tracking-[0.4em]">Scroll</span>
-              <svg width="16" height="24" viewBox="0 0 16 24" fill="none" className="text-[#C9A85C]">
-                <rect x="1" y="1" width="14" height="22" rx="7" stroke="currentColor" strokeWidth="1" opacity="0.5" />
+              <span
+                style={{
+                  color: "#B08D3F",
+                  fontSize: "9px",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.35em",
+                }}
+              >
+                Scroll
+              </span>
+              <svg
+                width="14"
+                height="20"
+                viewBox="0 0 16 24"
+                fill="none"
+                style={{ color: "#B08D3F" }}
+              >
+                <rect
+                  x="1"
+                  y="1"
+                  width="14"
+                  height="22"
+                  rx="7"
+                  stroke="currentColor"
+                  strokeWidth="1"
+                  opacity="0.4"
+                />
                 <motion.circle
                   cx="8"
                   cy="8"
                   r="2"
                   fill="currentColor"
-                  animate={{ cy: [8, 16, 8] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  animate={{ cy: [8, 15, 8] }}
+                  transition={{
+                    duration: 2.5,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
                 />
               </svg>
             </motion.div>

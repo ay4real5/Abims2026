@@ -4,7 +4,6 @@ import { useState, useCallback } from "react";
 import { AudioProvider } from "@/components/audio-manager";
 import ScrollProgress from "@/components/scroll-progress";
 import EnvelopeIntro from "@/components/envelope-intro";
-import HeroSection from "@/components/hero-section";
 import CeremonyReception from "@/components/ceremony-reception";
 import EventTimeline from "@/components/event-timeline";
 import PhotoGallery from "@/components/photo-gallery";
@@ -28,9 +27,8 @@ export default function Home() {
         {/* Envelope intro — always in DOM for scroll-back refold */}
         <div
           style={{
-            maxHeight: envelopeOpen ? "0vh" : "100vh",
-            overflow: "hidden",
-            transition: "max-height 1s ease-in-out",
+            minHeight: "100vh",
+            overflow: "visible",
           }}
         >
           <EnvelopeIntro onOpen={handleEnvelopeOpen} />
@@ -44,7 +42,6 @@ export default function Home() {
             pointerEvents: envelopeOpen ? "auto" : "none",
           }}
         >
-          <HeroSection />
           <CeremonyReception />
           <EventTimeline />
           <PhotoGallery />

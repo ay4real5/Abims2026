@@ -191,6 +191,7 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
   const [cardOut, setCardOut] = useState(false);
   const [showScrollHint, setShowScrollHint] = useState(false);
   const [zoomIn, setZoomIn] = useState(false);
+  const [sceneOpen, setSceneOpen] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -241,13 +242,18 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
       setState("open");
     }, 4400);
 
-    // Phase 6: Scroll hint appears (5000ms)
+    // Phase 6: The wedding world forms around the physical card (5000ms)
     addTimer(() => {
-      setShowScrollHint(true);
+      setSceneOpen(true);
     }, 5000);
 
-    // Phase 7: Notify parent (5500ms)
-    addTimer(() => onOpen(), 5500);
+    // Phase 7: Scroll hint appears after the world has settled (6800ms)
+    addTimer(() => {
+      setShowScrollHint(true);
+    }, 6800);
+
+    // Phase 8: Notify parent after the first cinematic moment finishes (7200ms)
+    addTimer(() => onOpen(), 7200);
   }, [state, playSound, startMusic, onOpen]);
 
   const closeEnvelope = useCallback(() => {
@@ -256,6 +262,7 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
     stopMusic();
     setShowScrollHint(false);
     setZoomIn(false);
+    setSceneOpen(false);
 
     // Card slides back down (200ms — 1400ms)
     addTimer(() => {
@@ -320,9 +327,11 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
       ref={sectionRef}
       className="relative min-h-[100svh] flex flex-col items-center justify-center overflow-hidden"
       style={{
-        background:
-          "radial-gradient(ellipse 90% 70% at 50% 40%, #2A2520 0%, #1C1814 50%, #100E0A 100%)",
-        willChange: "opacity",
+        background: sceneOpen
+          ? "radial-gradient(ellipse 80% 55% at 50% 18%, rgba(255,246,218,0.42) 0%, transparent 54%), linear-gradient(180deg, #1F271C 0%, #2F241A 45%, #120E0A 100%)"
+          : "radial-gradient(ellipse 90% 70% at 50% 40%, #2A2520 0%, #1C1814 50%, #100E0A 100%)",
+        transition: "background 1.8s cubic-bezier(0.16, 1, 0.3, 1)",
+        willChange: "opacity, background",
       }}
     >
       {/* ===== SUBTLE VIGNETTE ===== */}
@@ -332,6 +341,90 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
           background: "radial-gradient(ellipse 80% 60% at 50% 50%, transparent 40%, rgba(0,0,0,0.5) 100%)",
         }}
       />
+
+      <AnimatePresence>
+        {sceneOpen && (
+          <motion.div
+            className="absolute inset-0 pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.8, ease: EASE_PAPER }}
+          >
+            <motion.div
+              className="absolute left-1/2 top-[8vh] -translate-x-1/2 rounded-t-full"
+              initial={{ opacity: 0, scale: 0.88, y: 40 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 1.7, ease: EASE_PAPER }}
+              style={{
+                width: "min(470px, 108vw)",
+                height: "min(540px, 118vw)",
+                border: "1px solid rgba(201,168,92,0.35)",
+                borderBottom: "none",
+                boxShadow: "0 0 60px rgba(201,168,92,0.18), inset 0 0 36px rgba(201,168,92,0.08)",
+              }}
+            />
+
+            {[...Array(26)].map((_, i) => (
+              <motion.span
+                key={`flower-${i}`}
+                className="absolute rounded-full"
+                initial={{ opacity: 0, scale: 0.2 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 1.1, delay: 0.2 + (i % 8) * 0.08, ease: EASE_PAPER }}
+                style={{
+                  left: `${8 + ((i * 13) % 84)}%`,
+                  top: `${10 + ((i * 19) % 46)}%`,
+                  width: `${10 + (i % 4) * 4}px`,
+                  height: `${10 + (i % 4) * 4}px`,
+                  background: i % 3 === 0
+                    ? "radial-gradient(circle at 35% 35%, #FFF8E7 0%, #EAD7B4 55%, rgba(234,215,180,0) 72%)"
+                    : "radial-gradient(circle at 35% 35%, #F7E8D2 0%, #C9A85C 48%, rgba(201,168,92,0) 72%)",
+                  filter: "blur(0.1px)",
+                }}
+              />
+            ))}
+
+            {[...Array(14)].map((_, i) => (
+              <motion.span
+                key={`petal-${i}`}
+                className="absolute rounded-full"
+                initial={{ opacity: 0, y: -30, rotate: 0 }}
+                animate={{ opacity: [0, 0.7, 0.15], y: [0, 130 + i * 6], rotate: [0, 120 + i * 18] }}
+                transition={{ duration: 7 + (i % 5), repeat: Infinity, delay: i * 0.35, ease: "easeInOut" }}
+                style={{
+                  left: `${6 + ((i * 17) % 88)}%`,
+                  top: `${6 + (i % 4) * 6}%`,
+                  width: `${7 + (i % 3)}px`,
+                  height: `${11 + (i % 4)}px`,
+                  background: "linear-gradient(135deg, rgba(255,246,225,0.85), rgba(201,168,92,0.45))",
+                  borderRadius: "70% 30% 70% 30%",
+                }}
+              />
+            ))}
+
+            {[...Array(4)].map((_, i) => (
+              <motion.div
+                key={`candle-${i}`}
+                className="absolute bottom-[13vh]"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1.2, delay: 0.45 + i * 0.12, ease: EASE_PAPER }}
+                style={{ left: `${12 + i * 24}%` }}
+              >
+                <div className="relative w-[8px] h-[38px] rounded-sm bg-[#F4E8CF]/80 shadow-[0_0_18px_rgba(255,230,160,0.22)]">
+                  <motion.span
+                    className="absolute left-1/2 -top-3 block w-[10px] h-[16px] -translate-x-1/2 rounded-full"
+                    animate={{ scale: [1, 1.14, 0.94, 1], opacity: [0.75, 1, 0.72, 0.9] }}
+                    transition={{ duration: 1.8, repeat: Infinity, delay: i * 0.2 }}
+                    style={{ background: "radial-gradient(ellipse, #FFE6A0 0%, rgba(255,180,70,0.4) 42%, transparent 72%)" }}
+                  />
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ===== FLOATING DUST PARTICLES (subtle, cinematic) ===== */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden>
@@ -378,7 +471,8 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
           perspectiveOrigin: "50% 40%",
         }}
         animate={{
-          scale: zoomIn ? 1.08 : 1,
+          scale: sceneOpen ? 1.12 : zoomIn ? 1.08 : 1,
+          y: sceneOpen ? -12 : 0,
         }}
         transition={{ duration: 1.2, ease: EASE_PAPER }}
       >
@@ -433,8 +527,8 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
               transformOrigin: "bottom center",
             }}
             animate={{
-              y: cardOut ? "-72%" : "0%",
-              scale: cardOut ? 1.05 : 0.96,
+              y: sceneOpen ? "-86%" : cardOut ? "-72%" : "0%",
+              scale: sceneOpen ? 1.1 : cardOut ? 1.05 : 0.96,
               opacity: cardOut ? 1 : 0,
             }}
             transition={{
@@ -481,6 +575,54 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
             </div>
           </motion.div>
 
+          <motion.div
+            className="absolute left-0 right-0 bottom-0 overflow-hidden rounded-b-[4px]"
+            style={{
+              height: "52%",
+              zIndex: 3,
+              background: "linear-gradient(165deg, #EDE1BF 0%, #D8C8A0 52%, #C6B17E 100%)",
+              clipPath: "polygon(0 100%, 50% 0, 100% 100%)",
+              boxShadow: "inset 0 5px 18px rgba(255,250,230,0.18), inset 0 -8px 20px rgba(80,60,20,0.18), 0 -2px 12px rgba(65,45,18,0.16)",
+              willChange: "transform",
+            }}
+            animate={{ rotateX: flapOpen ? 4 : 0 }}
+            transition={{ duration: 1.4, ease: EASE_PAPER }}
+          >
+            <PaperTexture className="absolute inset-0" opacity={0.28} />
+          </motion.div>
+
+          <motion.div
+            className="absolute left-0 top-0 bottom-0 rounded-l-[4px]"
+            style={{
+              width: "50%",
+              zIndex: 4,
+              background: "linear-gradient(150deg, #F0E6CC 0%, #DECFAB 58%, #CBB989 100%)",
+              clipPath: "polygon(0 0, 100% 50%, 0 100%)",
+              boxShadow: "inset -8px 0 18px rgba(90,70,30,0.12)",
+              willChange: "transform",
+            }}
+            animate={{ rotateY: flapOpen ? -5 : 0 }}
+            transition={{ duration: 1.4, ease: EASE_PAPER }}
+          >
+            <PaperTexture className="absolute inset-0" opacity={0.26} />
+          </motion.div>
+
+          <motion.div
+            className="absolute right-0 top-0 bottom-0 rounded-r-[4px]"
+            style={{
+              width: "50%",
+              zIndex: 4,
+              background: "linear-gradient(210deg, #F0E6CC 0%, #DECFAB 58%, #CBB989 100%)",
+              clipPath: "polygon(100% 0, 0 50%, 100% 100%)",
+              boxShadow: "inset 8px 0 18px rgba(90,70,30,0.12)",
+              willChange: "transform",
+            }}
+            animate={{ rotateY: flapOpen ? 5 : 0 }}
+            transition={{ duration: 1.4, ease: EASE_PAPER }}
+          >
+            <PaperTexture className="absolute inset-0" opacity={0.26} />
+          </motion.div>
+
           {/* ===== TOP FLAP (the main flap that lifts open) ===== */}
           <motion.div
             className="absolute top-0 left-0 right-0 overflow-hidden rounded-t-[4px]"
@@ -517,6 +659,14 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
 
             {/* Front of flap texture */}
             <PaperTexture className="absolute inset-0" opacity={0.3} />
+            <div
+              className="absolute left-0 right-0 bottom-0"
+              style={{
+                height: "3px",
+                background: "linear-gradient(90deg, rgba(120,95,45,0.1), rgba(255,246,218,0.5), rgba(120,95,45,0.1))",
+                boxShadow: "0 2px 4px rgba(70,45,15,0.2)",
+              }}
+            />
 
             {/* Flap filigree */}
             <Flourish className="absolute top-2 left-2" size={36} />
@@ -534,6 +684,20 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
               {monogram}
             </div>
           </motion.div>
+
+          <motion.div
+            className="absolute left-1/2 top-[48%] -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none"
+            style={{
+              width: "clamp(74px, 24vw, 104px)",
+              height: "clamp(74px, 24vw, 104px)",
+              zIndex: 9,
+              background: "radial-gradient(circle, rgba(95,65,25,0.28), rgba(95,65,25,0.08) 46%, transparent 72%)",
+              filter: "blur(2px)",
+              willChange: "opacity, transform",
+            }}
+            animate={{ opacity: sealGone ? 0 : 1, scale: sealCracking ? 1.08 : 1 }}
+            transition={{ duration: 0.4, ease: EASE_PAPER }}
+          />
 
           {/* ===== WAX SEAL ===== */}
           <AnimatePresence>

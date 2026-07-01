@@ -224,6 +224,65 @@ body {
   50% { transform: translateX(1.5px); }
 }
 
+/* ===== Envelope reveal animations ===== */
+
+/* Light burst from center when seal breaks */
+@keyframes lightBurst {
+  0% { transform: scale(0); opacity: 0; }
+  40% { opacity: 0.9; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
+/* Radial light rays */
+@keyframes lightRays {
+  0% { opacity: 0; transform: scale(0.5) rotate(0deg); }
+  30% { opacity: 0.7; }
+  100% { opacity: 0; transform: scale(2.5) rotate(45deg); }
+}
+
+/* Invitation card emerges from envelope */
+@keyframes cardEmerge {
+  0% { transform: translateY(0) scale(0.9); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translateY(-60vh) scale(1.1); opacity: 0; }
+}
+
+/* Curtain wipe — gold panels slide apart */
+@keyframes curtainLeft {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+@keyframes curtainRight {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(100%); }
+}
+
+/* Floating gold particles upward */
+@keyframes floatUp {
+  0% { transform: translateY(0) translateX(0); opacity: 0; }
+  10% { opacity: 0.7; }
+  90% { opacity: 0.5; }
+  100% { transform: translateY(-100vh) translateX(20px); opacity: 0; }
+}
+
+/* Pulsing glow ring on seal */
+@keyframes pulseRing {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* Ken-Burns slow zoom for background */
+@keyframes kenBurns {
+  0% { transform: scale(1) translate(0, 0); }
+  100% { transform: scale(1.15) translate(-2%, -2%); }
+}
+
+/* Gentle sway for hanging envelope */
+@keyframes gentleSway {
+  0%, 100% { transform: rotate(-0.5deg); }
+  50% { transform: rotate(0.5deg); }
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

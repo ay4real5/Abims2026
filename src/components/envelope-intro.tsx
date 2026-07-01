@@ -13,6 +13,7 @@ const EASE_PAPER = [0.16, 1, 0.3, 1] as const;
 const EASE_SLIDE = [0.22, 1, 0.36, 1] as const;
 const EASE_CRACK = [0.34, 1.56, 0.64, 1] as const;
 const EASE_CLOSE = [0.4, 0, 0.2, 1] as const;
+const EASE_FLAP = [0.4, 0, 0.2, 1] as const;
 
 /* Haptic feedback */
 function haptic(pattern: number | number[]) {
@@ -173,7 +174,7 @@ function PaperTexture({ className, opacity = 0.4 }: { className?: string; opacit
       aria-hidden
       style={{
         backgroundImage:
-          "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.85 0 0 0 0 0.78 0 0 0 0 0.6 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E\")",
+          "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.85 0 0 0 0 0.78 0 0 0 0 0.6 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E\")",
         opacity,
         mixBlendMode: "multiply",
       }}
@@ -197,7 +198,7 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
-    const t = setTimeout(() => setIntroVisible(true), 350);
+    const t = setTimeout(() => setIntroVisible(true), 600);
     return () => clearTimeout(t);
   }, []);
 
@@ -318,20 +319,23 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
   const { monogram } = weddingData.couple;
 
   // Photorealistic paper colors
-  const envelopeBody = "linear-gradient(170deg, #F5EFD8 0%, #EDE3C8 30%, #E2D4B0 70%, #D4C49A 100%)";
+  const envelopeBody = "linear-gradient(170deg, #F5EFD8 0%, #EDE3C8 30%, #E2D4B0 70%, #D4C49A 100%), radial-gradient(ellipse 60% 40% at 30% 15%, rgba(255,250,235,0.5) 0%, transparent 60%), radial-gradient(ellipse 50% 50% at 80% 85%, rgba(120,100,50,0.12) 0%, transparent 55%)";
   const flapFace = "linear-gradient(175deg, #F0E6CC 0%, #E8DAB4 50%, #D8C8A0 100%)";
   const flapBack = "linear-gradient(175deg, #E8DAB4 0%, #DCC9A0 50%, #C9B888 100%)";
   const cardFace = "linear-gradient(175deg, #FFFDF7 0%, #FAF4E6 40%, #F3E9D2 100%)";
   const goldEdge = "1px solid rgba(180,150,80,0.4)";
 
   // Envelope dimensions — portrait, mobile-first: dominates width while respecting viewport height
-  const envW = "min(86vw, 58dvh)";
+  const envW = "min(86vw, 72dvh)";
 
   return (
     <section
       ref={sectionRef}
-      className="relative min-h-[100svh] flex flex-col items-center justify-center overflow-hidden"
+      className="relative flex flex-col items-center justify-center overflow-hidden"
       style={{
+        height: "100dvh",
+        maxHeight: "100dvh",
+        minHeight: "100dvh",
         background: sceneOpen
           ? "radial-gradient(ellipse 80% 55% at 50% 18%, rgba(255,246,218,0.42) 0%, transparent 54%), linear-gradient(180deg, #1F271C 0%, #2F241A 45%, #120E0A 100%)"
           : "radial-gradient(ellipse 90% 70% at 50% 40%, #2A2520 0%, #1C1814 50%, #100E0A 100%)",
@@ -481,8 +485,9 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
           aspectRatio: "320 / 440",
           perspective: "1400px",
           perspectiveOrigin: "50% 40%",
+          transformStyle: "preserve-3d",
         }}
-        transition={{ duration: introVisible ? 1.4 : 0.2, ease: EASE_PAPER }}
+        transition={{ duration: introVisible ? 2.5 : 0.2, ease: EASE_PAPER }}
       >
         {/* ===== ENVELOPE BODY (back layer — the pocket) ===== */}
         <motion.div
@@ -500,7 +505,7 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
           style={{
             background: envelopeBody,
             boxShadow:
-              "0 40px 100px rgba(0,0,0,0.6), 0 15px 40px rgba(0,0,0,0.3), inset 0 2px 6px rgba(255,250,235,0.3), inset 0 -4px 12px rgba(120,100,50,0.2)",
+              "0 4px 12px rgba(0,0,0,0.35), 0 20px 50px rgba(0,0,0,0.4), 0 60px 120px rgba(0,0,0,0.55), inset 0 2px 6px rgba(255,250,235,0.3), inset 0 -4px 12px rgba(120,100,50,0.2)",
             transformStyle: "preserve-3d",
             willChange: "transform",
           }}
@@ -530,7 +535,11 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
             <PaperTexture className="absolute inset-0" opacity={0.25} />
           </div>
 
-          {/* ===== INVITATION CARD (slides up from inside) ===== */}
+          {/* ===== INVITATION CARD (slides up from inside — clipped by pocket) ===== */}
+          <div
+            className="absolute left-0 right-0 bottom-0 top-0 overflow-hidden rounded-[4px]"
+            style={{ zIndex: 2 }}
+          >
           <motion.div
             className="absolute left-[6%] right-[6%] rounded-[3px] overflow-hidden"
             style={{
@@ -540,14 +549,12 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
               boxShadow: cardOut
                 ? "0 30px 80px rgba(0,0,0,0.4), 0 10px 30px rgba(0,0,0,0.2)"
                 : "0 0 0 rgba(0,0,0,0)",
-              zIndex: 2,
-              willChange: "transform, opacity",
+              willChange: "transform",
               transformOrigin: "bottom center",
             }}
             animate={{
               y: sceneOpen ? "-86%" : cardOut ? "-72%" : "0%",
-              scale: sceneOpen ? 1.1 : cardOut ? 1.05 : 0.96,
-              opacity: cardOut ? 1 : 0,
+              scale: sceneOpen ? 1.1 : cardOut ? 1.05 : 1,
             }}
             transition={{
               duration: cardOut ? 1.6 : 1.2,
@@ -592,6 +599,7 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
               </p>
             </div>
           </motion.div>
+          </div>
 
           <motion.div
             className="absolute left-0 right-0 bottom-0 overflow-hidden rounded-b-[4px]"
@@ -604,7 +612,7 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
               willChange: "transform",
             }}
             animate={{ rotateX: flapOpen ? 4 : 0 }}
-            transition={{ duration: 1.4, ease: EASE_PAPER }}
+            transition={{ duration: 1.4, ease: EASE_FLAP }}
           >
             <PaperTexture className="absolute inset-0" opacity={0.28} />
           </motion.div>
@@ -620,7 +628,7 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
               willChange: "transform",
             }}
             animate={{ rotateY: flapOpen ? -5 : 0 }}
-            transition={{ duration: 1.4, ease: EASE_PAPER }}
+            transition={{ duration: 1.4, ease: EASE_FLAP }}
           >
             <PaperTexture className="absolute inset-0" opacity={0.26} />
           </motion.div>
@@ -636,7 +644,7 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
               willChange: "transform",
             }}
             animate={{ rotateY: flapOpen ? 5 : 0 }}
-            transition={{ duration: 1.4, ease: EASE_PAPER }}
+            transition={{ duration: 1.4, ease: EASE_FLAP }}
           >
             <PaperTexture className="absolute inset-0" opacity={0.26} />
           </motion.div>
@@ -652,15 +660,16 @@ export default function EnvelopeIntro({ onOpen }: { onOpen: () => void }) {
               transformStyle: "preserve-3d",
               willChange: "transform",
               zIndex: 5,
-              boxShadow: "inset 0 -4px 16px rgba(120,100,50,0.15), 0 2px 8px rgba(0,0,0,0.1)",
+              boxShadow: "inset 0 -4px 16px rgba(120,100,50,0.15), 0 2px 8px rgba(0,0,0,0.1), 0 8px 24px rgba(0,0,0,0.12)",
               borderBottom: "1px solid rgba(180,150,80,0.3)",
+              filter: flapOpen ? "drop-shadow(0 12px 20px rgba(0,0,0,0.3))" : "none",
             }}
             animate={{
               rotateX: flapOpen ? -175 : 0,
             }}
             transition={{
               duration: flapOpen ? 1.6 : 1.2,
-              ease: flapOpen ? EASE_PAPER : EASE_CLOSE,
+              ease: flapOpen ? EASE_FLAP : EASE_CLOSE,
             }}
           >
             {/* Back of flap (visible when folded open) */}

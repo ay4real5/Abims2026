@@ -28,13 +28,31 @@ const Rule = () => (
   </div>
 );
 
-/** Thin interlocked wedding rings, hand-drawn in gold line. */
+/** Thin interlocked wedding rings that draw themselves in gold line. */
 const Rings = () => (
   <svg viewBox="0 0 120 70" className="mx-auto h-14 w-auto" aria-hidden>
-    <circle cx="48" cy="38" r="24" fill="none" stroke="#a98a52" strokeWidth="1.6" />
-    <circle cx="72" cy="38" r="24" fill="none" stroke="#8f7340" strokeWidth="1.2" opacity="0.8" />
+    <motion.circle
+      cx="48" cy="38" r="24" fill="none" stroke="#a98a52" strokeWidth="1.6"
+      initial={{ pathLength: 0 }}
+      whileInView={{ pathLength: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: 1.6, ease: "easeInOut", delay: 0.3 }}
+    />
+    <motion.circle
+      cx="72" cy="38" r="24" fill="none" stroke="#8f7340" strokeWidth="1.2" opacity="0.8"
+      initial={{ pathLength: 0 }}
+      whileInView={{ pathLength: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: 1.6, ease: "easeInOut", delay: 0.7 }}
+    />
     {/* diamond glint */}
-    <path d="M48 10 l4 5 -4 5 -4 -5 Z" fill="none" stroke="#a98a52" strokeWidth="1.2" />
+    <motion.path
+      d="M48 10 l4 5 -4 5 -4 -5 Z" fill="none" stroke="#a98a52" strokeWidth="1.2"
+      initial={{ pathLength: 0, opacity: 0 }}
+      whileInView={{ pathLength: 1, opacity: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.8, ease: "easeOut", delay: 1.9 }}
+    />
   </svg>
 );
 
@@ -120,13 +138,32 @@ export default function InvitationSheet({ active }: { active: boolean }) {
           </p>
         </motion.div>
 
-        <motion.h1
-          {...fadeUp}
-          className="mt-8 leading-tight"
-          style={{ ...scriptFont, fontSize: "clamp(44px, 13vw, 64px)", color: "#4a3d2c" }}
-        >
-          {site.coupleNames}
-        </motion.h1>
+        <motion.div {...fadeUp} className="relative mt-8 overflow-hidden px-2">
+          <motion.h1
+            className="leading-tight"
+            style={{ ...scriptFont, fontSize: "clamp(40px, 12vw, 64px)", color: "#4a3d2c" }}
+            initial={{ scale: 0.92, opacity: 0 }}
+            whileInView={{ scale: 1, opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1], delay: 0.5 }}
+          >
+            {site.coupleNames}
+          </motion.h1>
+          {/* golden shimmer pass across the names */}
+          <motion.div
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 w-1/2"
+            style={{
+              background:
+                "linear-gradient(105deg, rgba(255,236,180,0) 0%, rgba(255,236,180,0.9) 50%, rgba(255,236,180,0) 100%)",
+              mixBlendMode: "overlay",
+            }}
+            initial={{ left: "-60%" }}
+            whileInView={{ left: "115%" }}
+            viewport={{ once: true }}
+            transition={{ duration: 1.8, ease: "easeInOut", delay: 1.4 }}
+          />
+        </motion.div>
 
         <motion.div {...fadeUp} className="w-full">
           <p className="mt-6 text-base font-light italic" style={{ ...serif, color: "#6b5d4f" }}>

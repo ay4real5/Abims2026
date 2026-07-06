@@ -152,9 +152,49 @@ function waShare(message: string) {
     : `https://wa.me/?text=${text}`;
 }
 
+/** Elegant hairline navigation — appears once the letter has settled. */
+function SheetNav() {
+  const items = [
+    { id: "home", label: "Home" },
+    ...(site.story.length ? [{ id: "story", label: "Story" }] : []),
+    { id: "details", label: "Details" },
+    ...(site.timeline.length ? [{ id: "day", label: "The Day" }] : []),
+    ...(site.gallery.length ? [{ id: "gallery", label: "Gallery" }] : []),
+    ...(site.giftNote ? [{ id: "gifts", label: "Gifts" }] : []),
+    ...(site.faq.length ? [{ id: "faq", label: "Questions" }] : []),
+    { id: "rsvp", label: "RSVP" },
+  ];
+  return (
+    <motion.nav
+      className="sticky top-0 z-20 -mx-10 mb-4"
+      style={{
+        background: "rgba(246,239,223,0.88)",
+        backdropFilter: "blur(8px)",
+        borderBottom: "1px solid rgba(143,115,64,0.3)",
+      }}
+      initial={{ opacity: 0, y: -12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 1, delay: 1.2 }}
+    >
+      <div className="scrollbar-none flex items-center gap-6 overflow-x-auto px-6 py-3 whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {items.map((it) => (
+          <a
+            key={it.id}
+            href={`#${it.id}`}
+            className="text-[9px] font-light uppercase"
+            style={{ ...sans, letterSpacing: "0.3em", color: "#8f7340" }}
+          >
+            {it.label}
+          </a>
+        ))}
+      </div>
+    </motion.nav>
+  );
+}
+
 /**
- * The invitation, unfolded — one long sheet of stationery.
- * `active` unlocks scrolling once the envelope has fallen away.
+ * The invitation, unfolded — one long sheet of stationery that doubles as
+ * the website: sticky nav + anchored sections once `active`.
  */
 export default function InvitationSheet({ active }: { active: boolean }) {
   const [rsvpOpen, setRsvpOpen] = useState(false);
@@ -172,7 +212,7 @@ export default function InvitationSheet({ active }: { active: boolean }) {
 
   return (
     <div
-      className={`fixed inset-0 z-0 ${active ? "overflow-y-auto" : "overflow-hidden"}`}
+      className={`fixed inset-0 z-0 scroll-smooth ${active ? "overflow-y-auto" : "overflow-hidden"}`}
       style={{
         background: "linear-gradient(178deg, #f6efdf 0%, #efe4cb 60%, #e9dcbd 100%)",
         pointerEvents: active ? "auto" : "none",
@@ -192,8 +232,11 @@ export default function InvitationSheet({ active }: { active: boolean }) {
         style={{ border: "1px solid rgba(143,115,64,0.45)" }}
       />
 
-      <div className="relative mx-auto flex min-h-full max-w-md flex-col items-center px-10 pb-20 pt-[10dvh] text-center">
+      <div className="relative mx-auto flex min-h-full max-w-md flex-col items-center px-10 pb-20 pt-[4dvh] text-center">
+        {active && <SheetNav />}
+
         {/* ═ hero ═ */}
+        <div id="home" className="h-[4dvh]" aria-hidden />
         <motion.div {...fadeUp}>
           <Rings />
           <p
@@ -252,7 +295,7 @@ export default function InvitationSheet({ active }: { active: boolean }) {
         {site.story.length > 0 && (
           <>
             <Rule />
-            <motion.div {...fadeUp} className="w-full">
+            <motion.div id="story" {...fadeUp} className="w-full scroll-mt-16">
               <Heading>Our story</Heading>
               {site.story.map((p) => (
                 <p
@@ -269,6 +312,7 @@ export default function InvitationSheet({ active }: { active: boolean }) {
 
         {/* ═ venues ═ */}
         <Rule />
+        <div id="details" className="w-full scroll-mt-16">
         <VenueBlock block={site.ceremony} />
         <Rule />
         <VenueBlock block={site.reception} />
@@ -285,12 +329,13 @@ export default function InvitationSheet({ active }: { active: boolean }) {
             </a>
           </motion.p>
         ) : null}
+        </div>
 
         {/* ═ the day ═ */}
         {site.timeline.length > 0 && (
           <>
             <Rule />
-            <motion.div {...fadeUp} className="w-full">
+            <motion.div id="day" {...fadeUp} className="w-full scroll-mt-16">
               <Heading>The day</Heading>
               <div className="mx-auto mt-6 max-w-[280px] space-y-4">
                 {site.timeline.map((s) => (
@@ -336,7 +381,7 @@ export default function InvitationSheet({ active }: { active: boolean }) {
 
         {/* ═ gallery ═ */}
         {site.gallery.length > 0 && (
-          <motion.div {...fadeUp} className="mt-10 grid w-full grid-cols-2 gap-3">
+          <motion.div id="gallery" {...fadeUp} className="mt-10 grid w-full scroll-mt-16 grid-cols-2 gap-3">
             {site.gallery.map((src) => (
               <div key={src} className="relative aspect-[3/4] overflow-hidden rounded-xl">
                 <Image src={src} alt="" fill className="object-cover" sizes="45vw" />
@@ -349,7 +394,7 @@ export default function InvitationSheet({ active }: { active: boolean }) {
         {site.giftNote && (
           <>
             <Rule />
-            <motion.div {...fadeUp} className="w-full">
+            <motion.div id="gifts" {...fadeUp} className="w-full scroll-mt-16">
               <Heading>Gifts</Heading>
               <p
                 className="mx-auto mt-5 max-w-[300px] text-[15px] font-light italic leading-relaxed"
@@ -371,7 +416,7 @@ export default function InvitationSheet({ active }: { active: boolean }) {
 
         {/* ═ rsvp ═ */}
         <Rule />
-        <motion.div {...fadeUp} className="w-full">
+        <motion.div id="rsvp" {...fadeUp} className="w-full scroll-mt-16">
           <p className="text-base font-light italic" style={{ ...serif, color: "#6b5d4f" }}>
             Please confirm your attendance
           </p>
@@ -410,7 +455,7 @@ export default function InvitationSheet({ active }: { active: boolean }) {
         {site.faq.length > 0 && (
           <>
             <Rule />
-            <motion.div {...fadeUp} className="w-full">
+            <motion.div id="faq" {...fadeUp} className="w-full scroll-mt-16">
               <Heading>Questions</Heading>
               <div className="mt-6 space-y-6 text-left">
                 {site.faq.map((f) => (

@@ -27,7 +27,16 @@ type Stage = "sealed" | "cracked" | "opening" | "settled";
 export default function EnvelopeScene() {
   const reduced = useReducedMotion();
   const [stage, setStage] = useState<Stage>("sealed");
+  const [visited, setVisited] = useState(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  // returning guests may skip straight to the website
+  useEffect(() => {
+    if (localStorage.getItem("abims-opened")) setVisited(true);
+  }, []);
+  useEffect(() => {
+    if (stage === "settled") localStorage.setItem("abims-opened", "1");
+  }, [stage]);
 
   // dev shortcuts: /?open or /?stage=opening
   useEffect(() => {
@@ -195,6 +204,20 @@ export default function EnvelopeScene() {
           tap the seal
         </p>
       </motion.div>
+
+      {/* returning guests: skip straight to the website */}
+      {sealed && visited && (
+        <motion.button
+          onClick={() => setStage("settled")}
+          className="fixed bottom-7 left-1/2 z-50 -translate-x-1/2 text-[9px] font-light uppercase underline underline-offset-4"
+          style={{ fontFamily: "var(--font-sans)", letterSpacing: "0.35em", color: "#8a7a63" }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.8 }}
+          transition={{ duration: 1, delay: 1.5 }}
+        >
+          skip to the website
+        </motion.button>
+      )}
       </motion.div>
     </main>
   );

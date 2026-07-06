@@ -13,6 +13,14 @@ export const site = {
   dateLine: "Saturday · 5 September · 2026",
   /** Spelled out on the card */
   dateWords: "Saturday, the fifth of September",
+  /** ISO datetime of the ceremony — drives the live countdown */
+  weddingDateISO: "2026-09-05T14:00:00+01:00",
+
+  /** A few short paragraphs; shown under "Our Story". Empty array hides it. */
+  story: [
+    "We met as friends and somewhere along the way, forever started making sense.",
+    "Now we are counting down to the best day of our lives — and we want you there.",
+  ],
 
   ceremony: {
     title: "Ceremony",
@@ -29,7 +37,32 @@ export const site = {
   /** Google Maps share link — "" hides the location link */
   mapsUrl: "",
 
-  dressCode: "Black tie · a touch of gold",
+  dressCode: "Champagne gold & ivory",
+  /** His & hers guidance under the dress code. "" hides a line. */
+  dressLadies: "Elegant dresses — champagne, gold or ivory tones",
+  dressGentlemen: "Suits — a touch of gold is warmly encouraged",
+
+  /** Hour-by-hour day plan. Empty array hides the timeline. */
+  timeline: [
+    { time: "1:30 pm", what: "Guests arrive" },
+    { time: "2:00 pm", what: "Ceremony" },
+    { time: "4:00 pm", what: "Photographs" },
+    { time: "5:00 pm", what: "Cocktails" },
+    { time: "6:00 pm", what: "Reception & dinner" },
+    { time: "9:00 pm", what: "Dancing" },
+  ],
+
+  /** Gift note; account details optional. Empty giftNote hides the section. */
+  giftNote:
+    "Your presence is the greatest gift. Should you wish to honour us further, a contribution would be warmly received.",
+  giftDetails: "" /* e.g. "GTBank · 0123456789 · O. Awarun" */,
+
+  /** Questions & answers. Empty array hides the FAQ. */
+  faq: [
+    { q: "When should I RSVP by?", a: "Kindly reply before the first of August." },
+    { q: "Can I bring a plus one?", a: "Please RSVP for every guest named on your invitation." },
+    { q: "May I take photos?", a: "Yes — and please share them with our hashtag." },
+  ],
 
   /**
    * Photos for the gallery (dress code inspiration / the couple).
@@ -45,6 +78,7 @@ export const site = {
   whatsappNumber: "",
   rsvpAcceptMessage: "Joyfully accepting — we will be there! 🥂",
   rsvpDeclineMessage: "So sorry to miss it — celebrating you from afar. 🤍",
+  blessingMessage: "A blessing for Oyebimpe & Ayorinde: ",
 
   hashtag: "#Abims2026",
 };

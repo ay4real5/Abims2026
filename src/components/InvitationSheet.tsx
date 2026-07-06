@@ -28,6 +28,15 @@ const Rule = () => (
   </div>
 );
 
+const Heading = ({ children }: { children: React.ReactNode }) => (
+  <p
+    className="text-[10px] font-light uppercase"
+    style={{ ...sans, letterSpacing: "0.4em", color: "#8f7340" }}
+  >
+    {children}
+  </p>
+);
+
 /** Thin interlocked wedding rings that draw themselves in gold line. */
 const Rings = () => (
   <svg viewBox="0 0 120 70" className="mx-auto h-14 w-auto" aria-hidden>
@@ -45,7 +54,6 @@ const Rings = () => (
       viewport={{ once: true }}
       transition={{ duration: 1.6, ease: "easeInOut", delay: 0.7 }}
     />
-    {/* diamond glint */}
     <motion.path
       d="M48 10 l4 5 -4 5 -4 -5 Z" fill="none" stroke="#a98a52" strokeWidth="1.2"
       initial={{ pathLength: 0, opacity: 0 }}
@@ -56,6 +64,61 @@ const Rings = () => (
   </svg>
 );
 
+/** Live countdown to the ceremony, set in stationery numerals. */
+function Countdown() {
+  const [left, setLeft] = useState<null | { d: number; h: number; m: number; s: number }>(null);
+
+  useEffect(() => {
+    const target = new Date(site.weddingDateISO).getTime();
+    const tick = () => {
+      const diff = Math.max(0, target - Date.now());
+      setLeft({
+        d: Math.floor(diff / 86_400_000),
+        h: Math.floor(diff / 3_600_000) % 24,
+        m: Math.floor(diff / 60_000) % 60,
+        s: Math.floor(diff / 1_000) % 60,
+      });
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  if (!left) return <div className="h-16" aria-hidden />;
+
+  const cells = [
+    { n: left.d, label: "days" },
+    { n: left.h, label: "hours" },
+    { n: left.m, label: "minutes" },
+    { n: left.s, label: "seconds" },
+  ];
+
+  return (
+    <div className="mx-auto flex max-w-[320px] items-start justify-center">
+      {cells.map((c, i) => (
+        <div key={c.label} className="flex items-start">
+          {i > 0 && (
+            <span aria-hidden className="mx-3 mt-1 text-xl" style={{ ...serif, color: "rgba(143,115,64,0.5)" }}>
+              ·
+            </span>
+          )}
+          <div className="text-center">
+            <p className="text-3xl tabular-nums" style={{ ...serif, color: "#4a3d2c" }}>
+              {String(c.n).padStart(2, "0")}
+            </p>
+            <p
+              className="mt-1 text-[9px] font-light uppercase"
+              style={{ ...sans, letterSpacing: "0.25em", color: "#8a7a63" }}
+            >
+              {c.label}
+            </p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function VenueBlock({
   block,
 }: {
@@ -63,12 +126,7 @@ function VenueBlock({
 }) {
   return (
     <motion.div {...fadeUp} className="w-full">
-      <p
-        className="text-[10px] font-light uppercase"
-        style={{ ...sans, letterSpacing: "0.35em", color: "#8f7340" }}
-      >
-        {block.title}
-      </p>
+      <Heading>{block.title}</Heading>
       <p className="mt-4 text-2xl italic" style={{ ...serif, color: "#4a3d2c" }}>
         {block.venue}
       </p>
@@ -85,6 +143,13 @@ function VenueBlock({
       </p>
     </motion.div>
   );
+}
+
+function waShare(message: string) {
+  const text = encodeURIComponent(message);
+  return site.whatsappNumber
+    ? `https://wa.me/${site.whatsappNumber}?text=${text}`
+    : `https://wa.me/?text=${text}`;
 }
 
 /**
@@ -127,7 +192,8 @@ export default function InvitationSheet({ active }: { active: boolean }) {
         style={{ border: "1px solid rgba(143,115,64,0.45)" }}
       />
 
-      <div className="relative mx-auto flex min-h-full max-w-md flex-col items-center px-10 pb-20 pt-[12dvh] text-center">
+      <div className="relative mx-auto flex min-h-full max-w-md flex-col items-center px-10 pb-20 pt-[10dvh] text-center">
+        {/* ═ hero ═ */}
         <motion.div {...fadeUp}>
           <Rings />
           <p
@@ -139,17 +205,12 @@ export default function InvitationSheet({ active }: { active: boolean }) {
         </motion.div>
 
         <motion.div {...fadeUp} className="relative mt-8 overflow-hidden px-2">
-          <motion.h1
+          <h1
             className="leading-tight"
             style={{ ...scriptFont, fontSize: "clamp(40px, 12vw, 64px)", color: "#4a3d2c" }}
-            initial={{ scale: 0.92, opacity: 0 }}
-            whileInView={{ scale: 1, opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1], delay: 0.5 }}
           >
             {site.coupleNames}
-          </motion.h1>
-          {/* golden shimmer pass across the names */}
+          </h1>
           <motion.div
             aria-hidden
             className="pointer-events-none absolute inset-y-0 w-1/2"
@@ -182,6 +243,31 @@ export default function InvitationSheet({ active }: { active: boolean }) {
           </p>
         </motion.div>
 
+        {/* ═ countdown ═ */}
+        <motion.div {...fadeUp} className="mt-12 w-full">
+          <Countdown />
+        </motion.div>
+
+        {/* ═ our story ═ */}
+        {site.story.length > 0 && (
+          <>
+            <Rule />
+            <motion.div {...fadeUp} className="w-full">
+              <Heading>Our story</Heading>
+              {site.story.map((p) => (
+                <p
+                  key={p.slice(0, 24)}
+                  className="mt-5 text-[15px] font-light italic leading-relaxed"
+                  style={{ ...serif, color: "#6b5d4f" }}
+                >
+                  {p}
+                </p>
+              ))}
+            </motion.div>
+          </>
+        )}
+
+        {/* ═ venues ═ */}
         <Rule />
         <VenueBlock block={site.ceremony} />
         <Rule />
@@ -200,15 +286,55 @@ export default function InvitationSheet({ active }: { active: boolean }) {
           </motion.p>
         ) : null}
 
-        <Rule />
-        <motion.p
-          {...fadeUp}
-          className="text-[11px] font-light uppercase"
-          style={{ ...sans, letterSpacing: "0.3em", color: "#6b5d4f" }}
-        >
-          {site.dressCode}
-        </motion.p>
+        {/* ═ the day ═ */}
+        {site.timeline.length > 0 && (
+          <>
+            <Rule />
+            <motion.div {...fadeUp} className="w-full">
+              <Heading>The day</Heading>
+              <div className="mx-auto mt-6 max-w-[280px] space-y-4">
+                {site.timeline.map((s) => (
+                  <div key={s.what} className="flex items-baseline justify-between gap-6">
+                    <span className="text-sm italic" style={{ ...serif, color: "#4a3d2c" }}>
+                      {s.time}
+                    </span>
+                    <span
+                      className="flex-1 border-b border-dotted"
+                      style={{ borderColor: "rgba(143,115,64,0.35)" }}
+                    />
+                    <span
+                      className="text-[11px] font-light uppercase"
+                      style={{ ...sans, letterSpacing: "0.2em", color: "#6b5d4f" }}
+                    >
+                      {s.what}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
 
+        {/* ═ dress code ═ */}
+        <Rule />
+        <motion.div {...fadeUp} className="w-full">
+          <Heading>Dress code</Heading>
+          <p className="mt-5 text-xl italic" style={{ ...serif, color: "#4a3d2c" }}>
+            {site.dressCode}
+          </p>
+          {site.dressLadies && (
+            <p className="mt-4 text-sm font-light italic" style={{ ...serif, color: "#6b5d4f" }}>
+              Ladies — {site.dressLadies}
+            </p>
+          )}
+          {site.dressGentlemen && (
+            <p className="mt-2 text-sm font-light italic" style={{ ...serif, color: "#6b5d4f" }}>
+              Gentlemen — {site.dressGentlemen}
+            </p>
+          )}
+        </motion.div>
+
+        {/* ═ gallery ═ */}
         {site.gallery.length > 0 && (
           <motion.div {...fadeUp} className="mt-10 grid w-full grid-cols-2 gap-3">
             {site.gallery.map((src) => (
@@ -219,6 +345,31 @@ export default function InvitationSheet({ active }: { active: boolean }) {
           </motion.div>
         )}
 
+        {/* ═ gifts ═ */}
+        {site.giftNote && (
+          <>
+            <Rule />
+            <motion.div {...fadeUp} className="w-full">
+              <Heading>Gifts</Heading>
+              <p
+                className="mx-auto mt-5 max-w-[300px] text-[15px] font-light italic leading-relaxed"
+                style={{ ...serif, color: "#6b5d4f" }}
+              >
+                {site.giftNote}
+              </p>
+              {site.giftDetails && (
+                <p
+                  className="mt-4 text-[11px] font-light uppercase"
+                  style={{ ...sans, letterSpacing: "0.2em", color: "#8f7340" }}
+                >
+                  {site.giftDetails}
+                </p>
+              )}
+            </motion.div>
+          </>
+        )}
+
+        {/* ═ rsvp ═ */}
         <Rule />
         <motion.div {...fadeUp} className="w-full">
           <p className="text-base font-light italic" style={{ ...serif, color: "#6b5d4f" }}>
@@ -242,8 +393,42 @@ export default function InvitationSheet({ active }: { active: boolean }) {
               You replied: {replied === "yes" ? "joyfully accepting" : "regretfully declining"}
             </p>
           )}
+          <p className="mt-6">
+            <a
+              href={waShare(site.blessingMessage)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] font-light uppercase underline underline-offset-4"
+              style={{ ...sans, letterSpacing: "0.25em", color: "#8f7340" }}
+            >
+              Leave a blessing
+            </a>
+          </p>
         </motion.div>
 
+        {/* ═ faq ═ */}
+        {site.faq.length > 0 && (
+          <>
+            <Rule />
+            <motion.div {...fadeUp} className="w-full">
+              <Heading>Questions</Heading>
+              <div className="mt-6 space-y-6 text-left">
+                {site.faq.map((f) => (
+                  <div key={f.q}>
+                    <p className="text-[15px] italic" style={{ ...serif, color: "#4a3d2c" }}>
+                      {f.q}
+                    </p>
+                    <p className="mt-1 text-sm font-light leading-relaxed" style={{ ...serif, color: "#6b5d4f" }}>
+                      {f.a}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
+
+        {/* ═ footer ═ */}
         <motion.div {...fadeUp} className="mt-16">
           <p style={{ ...scriptFont, fontSize: 34, color: "#8f7340" }}>with love</p>
           <p

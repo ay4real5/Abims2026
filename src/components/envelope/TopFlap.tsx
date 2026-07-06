@@ -41,23 +41,36 @@ export default function TopFlap({ face }: { face: "outer" | "inner" }) {
       </svg>
 
       {face === "outer" && (
-        <div className="absolute inset-x-0 top-[12%] flex flex-col items-center px-8 text-center">
-          <h1
-            className="leading-tight"
-            style={{
+        // sits within the flap triangle — near the top where it is widest,
+        // long names stacked around the ampersand so nothing crosses a crease
+        <div className="absolute inset-x-0 top-[5%] mx-auto flex w-[72%] flex-col items-center text-center">
+          {(() => {
+            const parts = site.coupleNames.split("&").map((p) => p.trim());
+            const script = {
               fontFamily: "var(--font-script), cursive",
-              fontSize: "clamp(38px, 11vw, 56px)",
               color: "#5b4a35",
               textShadow: "0 1px 0 rgba(255,250,238,0.8)",
-            }}
-          >
-            {site.coupleNames}
-          </h1>
+            };
+            return parts.length === 2 ? (
+              <h1 className="leading-[1.15]" style={{ ...script, fontSize: "clamp(30px, 8.5vw, 44px)" }}>
+                {parts[0]}
+                <span className="mx-2" style={{ fontSize: "0.7em", color: "#8f7340" }}>
+                  &amp;
+                </span>
+                <br />
+                {parts[1]}
+              </h1>
+            ) : (
+              <h1 className="leading-tight" style={{ ...script, fontSize: "clamp(34px, 10vw, 52px)" }}>
+                {site.coupleNames}
+              </h1>
+            );
+          })()}
           <p
             className="mt-3 text-[10px] font-light uppercase"
             style={{
               fontFamily: "var(--font-sans)",
-              letterSpacing: "0.35em",
+              letterSpacing: "0.3em",
               color: "#8a7a63",
             }}
           >

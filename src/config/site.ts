@@ -4,9 +4,9 @@
  */
 export const site = {
   /** Initials pressed into the wax seal */
-  initials: ["A", "B"] as const,
+  initials: ["O", "A"] as const,
   /** Names as they appear on the envelope and card */
-  coupleNames: "Abim & Bola",
+  coupleNames: "Oyebimpe & Ayorinde",
   year: "2026",
 
   /** On the envelope flap, e.g. "Saturday · 5 September · 2026" */

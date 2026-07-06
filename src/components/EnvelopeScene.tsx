@@ -50,8 +50,8 @@ export default function EnvelopeScene() {
     }
     setStage("cracked");
     timers.current = [
-      setTimeout(() => setStage("opening"), 650),
-      setTimeout(() => setStage("settled"), 1900),
+      setTimeout(() => setStage("opening"), 1100),
+      setTimeout(() => setStage("settled"), 3600),
     ];
   }, [stage, reduced]);
 
@@ -60,10 +60,17 @@ export default function EnvelopeScene() {
   const settled = stage === "settled";
 
   const foldExit = settled ? { opacity: 0 } : { opacity: 1 };
-  const exitTransition = { duration: reduced ? 0 : 1.1, ease: easeCinematic, delay: reduced ? 0 : 0.35 };
+  const exitTransition = { duration: reduced ? 0 : 1.2, ease: easeCinematic, delay: reduced ? 0 : 0.1 };
 
   return (
-    <main className="relative h-[100dvh]" style={{ perspective: 1200 }}>
+    <main className="relative h-[100dvh] overflow-hidden" style={{ perspective: 1200 }}>
+      {/* gentle camera push-in while everything moves in slow motion */}
+      <motion.div
+        className="absolute inset-0"
+        initial={false}
+        animate={{ scale: stage === "opening" ? 1.04 : 1 }}
+        transition={{ duration: reduced ? 0 : 2.6, ease: [0.3, 0, 0.2, 1] }}
+      >
       {/* the invitation lives underneath everything */}
       <InvitationSheet active={settled} />
 
@@ -108,7 +115,7 @@ export default function EnvelopeScene() {
         initial={false}
         animate={{ rotateX: flapOpen ? -168 : 0, opacity: settled ? 0 : 1 }}
         transition={{
-          rotateX: { duration: reduced ? 0 : 1.2, ease: easeCinematic },
+          rotateX: { duration: reduced ? 0 : 2.4, ease: [0.55, 0, 0.2, 1] },
           opacity: exitTransition,
         }}
       >
@@ -187,6 +194,7 @@ export default function EnvelopeScene() {
         >
           tap the seal
         </p>
+      </motion.div>
       </motion.div>
     </main>
   );

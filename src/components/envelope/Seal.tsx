@@ -55,17 +55,17 @@ export default function Seal({ cracked, onOpen, className, style }: Props) {
       {/* monogram — embossed */}
       <text
         x="350" y="313" textAnchor="middle" dominantBaseline="central"
-        fontFamily="var(--font-serif), Georgia, serif" fontSize="44" fontStyle="italic"
+        fontFamily="var(--font-serif), Georgia, serif" fontSize="36" fontStyle="italic"
         fontWeight="600" letterSpacing="2" fill="rgba(40,23,6,0.9)" dy="2"
       >
-        {site.initials[0]}{site.initials[1]}
+        {site.initials[0]}&amp;{site.initials[1]}
       </text>
       <text
         x="350" y="313" textAnchor="middle" dominantBaseline="central"
-        fontFamily="var(--font-serif), Georgia, serif" fontSize="44" fontStyle="italic"
+        fontFamily="var(--font-serif), Georgia, serif" fontSize="36" fontStyle="italic"
         fontWeight="600" letterSpacing="2" fill="url(#sl-gold)"
       >
-        {site.initials[0]}{site.initials[1]}
+        {site.initials[0]}&amp;{site.initials[1]}
       </text>
       {/* specular catch */}
       <ellipse
@@ -131,7 +131,7 @@ export default function Seal({ cracked, onOpen, className, style }: Props) {
                 clipPath="url(#sl-left)"
                 initial={{ x: 0, y: 0, rotate: 0, opacity: 1 }}
                 animate={{ x: -18, y: 10, rotate: -7, opacity: 0 }}
-                transition={{ duration: reduced ? 0 : 0.6, ease: [0.3, 0, 0.6, 1] }}
+                transition={{ duration: reduced ? 0 : 1.6, ease: [0.2, 0, 0.3, 1] }}
                 style={{ transformBox: "fill-box", transformOrigin: "center" }}
               >
                 <g filter="url(#sl-shadow)">{sealArt}</g>
@@ -140,7 +140,7 @@ export default function Seal({ cracked, onOpen, className, style }: Props) {
                 clipPath="url(#sl-right)"
                 initial={{ x: 0, y: 0, rotate: 0, opacity: 1 }}
                 animate={{ x: 20, y: 13, rotate: 8, opacity: 0 }}
-                transition={{ duration: reduced ? 0 : 0.6, ease: [0.3, 0, 0.6, 1] }}
+                transition={{ duration: reduced ? 0 : 1.6, ease: [0.2, 0, 0.3, 1] }}
                 style={{ transformBox: "fill-box", transformOrigin: "center" }}
               >
                 <g filter="url(#sl-shadow)">{sealArt}</g>
@@ -157,7 +157,7 @@ export default function Seal({ cracked, onOpen, className, style }: Props) {
                     fill="#e3c37e"
                     initial={{ opacity: 0, x: 0, y: 0 }}
                     animate={{ opacity: [0, 1, 0], x: p.dx, y: p.dy }}
-                    transition={{ duration: 0.7, delay: p.delay, ease: "easeOut" }}
+                    transition={{ duration: 1.5, delay: p.delay * 3, ease: "easeOut" }}
                   />
                 ))}
             </>

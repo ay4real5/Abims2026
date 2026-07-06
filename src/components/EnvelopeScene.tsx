@@ -7,6 +7,7 @@ import EnvelopePocket from "./envelope/EnvelopePocket";
 import TopFlap from "./envelope/TopFlap";
 import Seal from "./envelope/Seal";
 import InvitationCard from "./InvitationCard";
+import InvitationSheet from "./InvitationSheet";
 
 /** Grain for the room itself — keeps the dark from reading as flat pixels. */
 const NOISE =
@@ -26,7 +27,7 @@ const easeCinematic: [number, number, number, number] = [0.45, 0, 0.15, 1];
  * base(0) < card(20) < pocket(30) < flap(40 sealed / 10 open) < seal(50).
  * Only the flap uses preserve-3d, for its outer/inner faces.
  */
-type Stage = "sealed" | "cracked" | "opening" | "emerging" | "revealed";
+type Stage = "sealed" | "cracked" | "opening" | "emerging" | "revealed" | "settled";
 
 export default function EnvelopeScene() {
   const reduced = useReducedMotion();
@@ -36,9 +37,10 @@ export default function EnvelopeScene() {
   // dev shortcut: /?open jumps to the revealed state, /?stage=emerging to any stage
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.has("open")) setStage("revealed");
+    if (params.has("open")) setStage("settled");
     const s = params.get("stage");
-    if (s === "cracked" || s === "opening" || s === "emerging" || s === "revealed") setStage(s);
+    if (s === "cracked" || s === "opening" || s === "emerging" || s === "revealed" || s === "settled")
+      setStage(s);
     const t = timers.current;
     return () => t.forEach(clearTimeout);
   }, []);
@@ -49,7 +51,7 @@ export default function EnvelopeScene() {
       navigator.vibrate?.(12);
     } catch {}
     if (reduced) {
-      setStage("revealed");
+      setStage("settled");
       return;
     }
     setStage("cracked");
@@ -57,13 +59,15 @@ export default function EnvelopeScene() {
       setTimeout(() => setStage("opening"), 700),
       setTimeout(() => setStage("emerging"), 1500),
       setTimeout(() => setStage("revealed"), 2600),
+      setTimeout(() => setStage("settled"), 4200),
     ];
   }, [stage, reduced]);
 
   const sealed = stage === "sealed";
-  const flapOpen = stage === "opening" || stage === "emerging" || stage === "revealed";
-  const cardOut = stage === "emerging" || stage === "revealed";
-  const done = stage === "revealed";
+  const flapOpen = stage === "opening" || stage === "emerging" || stage === "revealed" || stage === "settled";
+  const cardOut = stage === "emerging" || stage === "revealed" || stage === "settled";
+  const done = stage === "revealed" || stage === "settled";
+  const settled = stage === "settled";
 
   /** the envelope's exit — applied to each part so the card can stay behind */
   const envelopeExit = done ? { opacity: 0, y: 60 } : { opacity: 1, y: 0 };
@@ -146,10 +150,10 @@ export default function EnvelopeScene() {
             initial={false}
             animate={
               done
-                ? { y: "0%", scale: 1.12 }
+                ? { y: "0%", scale: 1.12, opacity: settled ? 0 : 1 }
                 : cardOut
-                  ? { y: "-58%", scale: 1 }
-                  : { y: "0%", scale: 1 }
+                  ? { y: "-58%", scale: 1, opacity: 1 }
+                  : { y: "0%", scale: 1, opacity: 1 }
             }
             transition={{ duration: reduced ? 0 : done ? 1.4 : 1.2, ease: easeCinematic }}
           >
@@ -243,6 +247,9 @@ export default function EnvelopeScene() {
           touch the seal
         </motion.p>
       </motion.div>
+
+      {/* the invitation, unfolded — the final scene */}
+      {settled && <InvitationSheet />}
     </main>
   );
 }

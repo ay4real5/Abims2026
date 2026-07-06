@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import { site } from "@/config/site";
 import RsvpModal, { type RsvpChoice } from "./RsvpModal";
@@ -20,13 +20,113 @@ const fadeUp = {
   transition: { duration: 1, ease: [0.16, 1, 0.3, 1] as const },
 };
 
+/** Divider that draws itself in, with a slowly turning gold diamond. */
 const Rule = () => (
   <div aria-hidden className="mx-auto my-12 flex w-full max-w-[220px] items-center gap-3">
-    <div className="h-px flex-1" style={{ background: "rgba(143,115,64,0.4)" }} />
-    <div className="h-1 w-1 rotate-45" style={{ background: "rgba(143,115,64,0.55)" }} />
-    <div className="h-px flex-1" style={{ background: "rgba(143,115,64,0.4)" }} />
+    <motion.div
+      className="h-px flex-1 origin-right"
+      style={{ background: "rgba(143,115,64,0.4)" }}
+      initial={{ scaleX: 0 }}
+      whileInView={{ scaleX: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
+    />
+    <motion.div
+      className="h-1.5 w-1.5"
+      style={{ background: "rgba(143,115,64,0.55)" }}
+      animate={{ rotate: [45, 225, 405] }}
+      transition={{ duration: 14, repeat: Infinity, ease: "linear" }}
+    />
+    <motion.div
+      className="h-px flex-1 origin-left"
+      style={{ background: "rgba(143,115,64,0.4)" }}
+      initial={{ scaleX: 0 }}
+      whileInView={{ scaleX: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
+    />
   </div>
 );
+
+/**
+ * Ambient life for the whole sheet — champagne bokeh drifting up slowly and
+ * gold motes twinkling forever. Fixed to the viewport, behind the content.
+ */
+const BOKEH = [
+  { x: 8, y: 85, s: 90, d: 26, delay: 0, o: 0.10 },
+  { x: 78, y: 92, s: 130, d: 32, delay: 4, o: 0.08 },
+  { x: 30, y: 96, s: 70, d: 22, delay: 8, o: 0.12 },
+  { x: 60, y: 88, s: 100, d: 28, delay: 12, o: 0.09 },
+  { x: 90, y: 95, s: 60, d: 20, delay: 16, o: 0.11 },
+];
+const MOTES = [
+  { x: 12, y: 30, s: 5, d: 7, delay: 0 },
+  { x: 85, y: 20, s: 4, d: 9, delay: 1.5 },
+  { x: 25, y: 60, s: 6, d: 8, delay: 3 },
+  { x: 70, y: 45, s: 4, d: 10, delay: 2 },
+  { x: 45, y: 75, s: 5, d: 7.5, delay: 4.5 },
+  { x: 92, y: 65, s: 4, d: 9.5, delay: 6 },
+  { x: 8, y: 80, s: 5, d: 8.5, delay: 5 },
+  { x: 55, y: 15, s: 4, d: 11, delay: 7 },
+];
+
+function Ambient() {
+  return (
+    <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden">
+      {/* light that never stops moving across the paper */}
+      <motion.div
+        className="absolute -inset-[30%]"
+        style={{
+          background:
+            "radial-gradient(45% 35% at 50% 40%, rgba(255,241,204,0.5) 0%, rgba(255,241,204,0) 70%)",
+        }}
+        animate={{ x: ["-12%", "12%", "-12%"], y: ["-6%", "8%", "-6%"] }}
+        transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
+      />
+      {/* champagne bokeh rising */}
+      {BOKEH.map((b, i) => (
+        <motion.div
+          key={`bk${i}`}
+          className="absolute rounded-full"
+          style={{
+            left: `${b.x}%`,
+            top: `${b.y}%`,
+            width: b.s,
+            height: b.s,
+            background:
+              "radial-gradient(circle at 35% 35%, rgba(212,178,110,0.5), rgba(212,178,110,0.08) 70%)",
+            filter: "blur(6px)",
+            opacity: b.o,
+          }}
+          animate={{ y: ["0vh", "-110vh"], x: [0, 18, -12, 8, 0] }}
+          transition={{ duration: b.d, delay: b.delay, repeat: Infinity, ease: "linear" }}
+        />
+      ))}
+      {/* gold motes twinkling */}
+      {MOTES.map((m, i) => (
+        <motion.div
+          key={`mt${i}`}
+          className="absolute rounded-full"
+          style={{
+            left: `${m.x}%`,
+            top: `${m.y}%`,
+            width: m.s,
+            height: m.s,
+            background: "#d9b975",
+            boxShadow: "0 0 8px 2px rgba(217,185,117,0.6)",
+          }}
+          animate={{
+            opacity: [0, 0.9, 0.2, 0.8, 0],
+            y: [0, -14, -26, -38, -50],
+            x: [0, 6, -4, 5, 0],
+            scale: [0.6, 1, 0.8, 1, 0.5],
+          }}
+          transition={{ duration: m.d, delay: m.delay, repeat: Infinity, ease: "easeInOut" }}
+        />
+      ))}
+    </div>
+  );
+}
 
 const Heading = ({ children }: { children: React.ReactNode }) => (
   <p
@@ -103,9 +203,18 @@ function Countdown() {
             </span>
           )}
           <div className="text-center">
-            <p className="text-3xl tabular-nums" style={{ ...serif, color: "#4a3d2c" }}>
-              {String(c.n).padStart(2, "0")}
-            </p>
+            <div className="relative h-9 overflow-hidden">
+              <motion.p
+                key={c.n}
+                className="text-3xl tabular-nums"
+                style={{ ...serif, color: "#4a3d2c" }}
+                initial={{ y: 14, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              >
+                {String(c.n).padStart(2, "0")}
+              </motion.p>
+            </div>
             <p
               className="mt-1 text-[9px] font-light uppercase"
               style={{ ...sans, letterSpacing: "0.25em", color: "#8a7a63" }}
@@ -197,6 +306,7 @@ function SheetNav() {
  * the website: sticky nav + anchored sections once `active`.
  */
 export default function InvitationSheet({ active }: { active: boolean }) {
+  const reduced = useReducedMotion();
   const [rsvpOpen, setRsvpOpen] = useState(false);
   const [replied, setReplied] = useState<RsvpChoice | null>(null);
 
@@ -225,6 +335,8 @@ export default function InvitationSheet({ active }: { active: boolean }) {
         className="pointer-events-none fixed inset-0 opacity-[0.06]"
         style={{ backgroundImage: `url("${NOISE}")`, backgroundSize: "160px" }}
       />
+      {/* the sheet breathes — drifting light, bokeh, twinkling motes */}
+      {active && !reduced && <Ambient />}
       {/* plate-printed hairline frame */}
       <div
         aria-hidden
@@ -238,7 +350,12 @@ export default function InvitationSheet({ active }: { active: boolean }) {
         {/* ═ hero ═ */}
         <div id="home" className="h-[4dvh]" aria-hidden />
         <motion.div {...fadeUp}>
-          <Rings />
+          <motion.div
+            animate={{ y: [0, -4, 0], rotate: [0, 1.2, 0, -1.2, 0] }}
+            transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <Rings />
+          </motion.div>
           <p
             className="mt-8 text-[10px] font-light uppercase"
             style={{ ...sans, letterSpacing: "0.4em", color: "#8f7340" }}
@@ -254,6 +371,7 @@ export default function InvitationSheet({ active }: { active: boolean }) {
           >
             {site.coupleNames}
           </h1>
+          {/* shimmer returns every few seconds — the names never sit still */}
           <motion.div
             aria-hidden
             className="pointer-events-none absolute inset-y-0 w-1/2"
@@ -262,10 +380,8 @@ export default function InvitationSheet({ active }: { active: boolean }) {
                 "linear-gradient(105deg, rgba(255,236,180,0) 0%, rgba(255,236,180,0.9) 50%, rgba(255,236,180,0) 100%)",
               mixBlendMode: "overlay",
             }}
-            initial={{ left: "-60%" }}
-            whileInView={{ left: "115%" }}
-            viewport={{ once: true }}
-            transition={{ duration: 1.8, ease: "easeInOut", delay: 1.4 }}
+            animate={{ left: ["-60%", "115%"] }}
+            transition={{ duration: 2, ease: "easeInOut", delay: 1.4, repeat: Infinity, repeatDelay: 3.5 }}
           />
         </motion.div>
 
@@ -420,19 +536,27 @@ export default function InvitationSheet({ active }: { active: boolean }) {
           <p className="text-base font-light italic" style={{ ...serif, color: "#6b5d4f" }}>
             Please confirm your attendance
           </p>
-          <button
+          <motion.button
             onClick={() => setRsvpOpen(true)}
-            className="mt-6 inline-block rounded-full px-12 py-4 text-[11px] uppercase transition-transform active:scale-95"
+            className="mt-6 inline-block rounded-full px-12 py-4 text-[11px] uppercase active:scale-95"
             style={{
               ...sans,
               letterSpacing: "0.3em",
               color: "#f6efe1",
               background: "linear-gradient(180deg, #a98a52 0%, #8f7340 100%)",
-              boxShadow: "0 2px 10px rgba(120,90,40,0.35), inset 0 1px 0 rgba(255,240,200,0.4)",
             }}
+            animate={{
+              scale: [1, 1.04, 1],
+              boxShadow: [
+                "0 2px 10px rgba(120,90,40,0.35), 0 0 0px rgba(217,185,117,0), inset 0 1px 0 rgba(255,240,200,0.4)",
+                "0 2px 14px rgba(120,90,40,0.45), 0 0 24px rgba(217,185,117,0.55), inset 0 1px 0 rgba(255,240,200,0.4)",
+                "0 2px 10px rgba(120,90,40,0.35), 0 0 0px rgba(217,185,117,0), inset 0 1px 0 rgba(255,240,200,0.4)",
+              ],
+            }}
+            transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
           >
             RSVP
-          </button>
+          </motion.button>
           {replied && (
             <p className="mt-5 text-sm italic" style={{ ...serif, color: "#8a7a63" }}>
               You replied: {replied === "yes" ? "joyfully accepting" : "regretfully declining"}

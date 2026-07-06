@@ -1,6 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Jost } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
+
+const script = localFont({
+  src: "../fonts/GreatVibes-Regular.ttf",
+  variable: "--font-script",
+  weight: "400",
+});
 
 const serif = Cormorant_Garamond({
   variable: "--font-serif",
@@ -21,7 +28,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0e0b08",
+  themeColor: "#efe6d4",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -34,7 +41,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${serif.variable} ${sans.variable} h-full antialiased`}>
+    <html lang="en" className={`${serif.variable} ${sans.variable} ${script.variable} h-full antialiased`}>
       <body className="min-h-full">{children}</body>
     </html>
   );

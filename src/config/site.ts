@@ -1,39 +1,50 @@
 /**
  * ✏️ EDIT ME — single place for the couple's details.
  * Everything on the invitation reads from here.
- * Entries left as placeholders render sensibly until filled in.
  */
 export const site = {
   /** Initials pressed into the wax seal */
   initials: ["A", "B"] as const,
-  /** Names as they appear on the card, e.g. "Abimbola & Bolanle" */
-  coupleNames: "A & B",
+  /** Names as they appear on the envelope and card */
+  coupleNames: "Abim & Bola",
   year: "2026",
 
-  /** e.g. "Saturday, the fifth of September" */
+  /** On the envelope flap, e.g. "Saturday · 5 September · 2026" */
+  dateLine: "Saturday · 5 September · 2026",
+  /** Spelled out on the card */
   dateWords: "Saturday, the fifth of September",
-  /** short form under the schedule, e.g. "05 · 09 · 2026" */
-  dateShort: "05 · 09 · 2026",
 
-  venue: "Venue to be announced",
-  city: "",
-  /** Google Maps share link — leave "" to hide the location button */
+  ceremony: {
+    title: "Ceremony",
+    venue: "St. Andrew's Cathedral",
+    address: ["1 Cathedral Close", "Lagos"],
+    time: "2:00 pm",
+  },
+  reception: {
+    title: "Reception",
+    venue: "The Grand Ballroom",
+    address: ["15 Marina Road", "Lagos"],
+    time: "6:00 pm",
+  },
+  /** Google Maps share link — "" hides the location link */
   mapsUrl: "",
-
-  schedule: [
-    { time: "2:00 pm", what: "Ceremony" },
-    { time: "5:00 pm", what: "Cocktails" },
-    { time: "7:00 pm", what: "Reception" },
-  ],
 
   dressCode: "Black tie · a touch of gold",
 
   /**
-   * WhatsApp RSVP. With a number ("2348012345678", no +) the button opens
-   * a chat; left "" it opens WhatsApp's share sheet with the message.
+   * Photos for the gallery (dress code inspiration / the couple).
+   * Drop files into /public/gallery and list them here, e.g. "/gallery/1.jpg".
+   * Empty list hides the section.
+   */
+  gallery: [] as string[],
+
+  /**
+   * WhatsApp RSVP. With a number ("2348012345678", no +) the buttons open
+   * a chat; left "" they open WhatsApp's share sheet with the message.
    */
   whatsappNumber: "",
-  rsvpMessage: "Joyfully accepting — we will be there! 🥂",
+  rsvpAcceptMessage: "Joyfully accepting — we will be there! 🥂",
+  rsvpDeclineMessage: "So sorry to miss it — celebrating you from afar. 🤍",
 
   hashtag: "#Abims2026",
 };

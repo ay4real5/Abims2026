@@ -2,45 +2,38 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import EnvelopeBase from "./envelope/EnvelopeBase";
 import EnvelopePocket from "./envelope/EnvelopePocket";
 import TopFlap from "./envelope/TopFlap";
 import Seal from "./envelope/Seal";
-import InvitationCard from "./InvitationCard";
 import InvitationSheet from "./InvitationSheet";
 
-/** Grain for the room itself — keeps the dark from reading as flat pixels. */
 const NOISE =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E";
 
-const easeOutLong: [number, number, number, number] = [0.16, 1, 0.3, 1];
 const easeCinematic: [number, number, number, number] = [0.45, 0, 0.15, 1];
 
+/** flap point sits at 58% of the viewport height */
+const POINT = "58dvh";
+
 /**
- * sealed   – envelope floats, seal breathes
- * cracked  – wax fractures, halves fall away          (tap → +0 ms)
- * opening  – top flap rotates up in 3D                (+700 ms)
- * emerging – the card slides up out of the envelope   (+1500 ms)
- * revealed – envelope falls away, card locks centre   (+2600 ms)
- *
- * Layering: all parts are flat siblings so z-index stays reliable —
- * base(0) < card(20) < pocket(30) < flap(40 sealed / 10 open) < seal(50).
- * Only the flap uses preserve-3d, for its outer/inner faces.
+ * sealed  – fullscreen envelope, seal breathing, tap hint pulsing
+ * cracked – wax fractures                          (tap → +0 ms)
+ * opening – flap rotates up in 3D, page beneath    (+650 ms)
+ * settled – folds fade away, page unlocks          (+1900 ms)
  */
-type Stage = "sealed" | "cracked" | "opening" | "emerging" | "revealed" | "settled";
+type Stage = "sealed" | "cracked" | "opening" | "settled";
 
 export default function EnvelopeScene() {
   const reduced = useReducedMotion();
   const [stage, setStage] = useState<Stage>("sealed");
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  // dev shortcut: /?open jumps to the revealed state, /?stage=emerging to any stage
+  // dev shortcuts: /?open or /?stage=opening
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.has("open")) setStage("settled");
     const s = params.get("stage");
-    if (s === "cracked" || s === "opening" || s === "emerging" || s === "revealed" || s === "settled")
-      setStage(s);
+    if (s === "cracked" || s === "opening" || s === "settled") setStage(s);
     const t = timers.current;
     return () => t.forEach(clearTimeout);
   }, []);
@@ -56,200 +49,141 @@ export default function EnvelopeScene() {
     }
     setStage("cracked");
     timers.current = [
-      setTimeout(() => setStage("opening"), 700),
-      setTimeout(() => setStage("emerging"), 1500),
-      setTimeout(() => setStage("revealed"), 2600),
-      setTimeout(() => setStage("settled"), 4200),
+      setTimeout(() => setStage("opening"), 650),
+      setTimeout(() => setStage("settled"), 1900),
     ];
   }, [stage, reduced]);
 
   const sealed = stage === "sealed";
-  const flapOpen = stage === "opening" || stage === "emerging" || stage === "revealed" || stage === "settled";
-  const cardOut = stage === "emerging" || stage === "revealed" || stage === "settled";
-  const done = stage === "revealed" || stage === "settled";
+  const flapOpen = stage === "opening" || stage === "settled";
   const settled = stage === "settled";
 
-  /** the envelope's exit — applied to each part so the card can stay behind */
-  const envelopeExit = done ? { opacity: 0, y: 60 } : { opacity: 1, y: 0 };
-  const exitTransition = { duration: reduced ? 0 : 1.4, ease: easeCinematic };
+  const foldExit = settled ? { opacity: 0 } : { opacity: 1 };
+  const exitTransition = { duration: reduced ? 0 : 1.1, ease: easeCinematic, delay: reduced ? 0 : 0.35 };
 
   return (
-    <main
-      className="relative grid h-[100dvh] place-items-center overflow-hidden"
-      style={{
-        background:
-          "radial-gradient(120% 90% at 50% 36%, #262019 0%, #171209 48%, #0c0906 100%)",
-      }}
-    >
-      {/* the room warms once the invitation is out */}
+    <main className="relative h-[100dvh]" style={{ perspective: 1200 }}>
+      {/* the invitation lives underneath everything */}
+      <InvitationSheet active={settled} />
+
+      {/* ── envelope folds (fade away once open) ─────────────────── */}
       <motion.div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(120% 90% at 50% 40%, #3d3323 0%, #241c11 55%, #120d08 100%)",
-        }}
+        className="pointer-events-none fixed inset-0 z-30"
         initial={false}
-        animate={{ opacity: done ? 1 : 0 }}
-        transition={{ duration: reduced ? 0 : 2, ease: "easeInOut" }}
-      />
-
-      {/* warm light pool behind the envelope */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-[42%] h-[80vmin] w-[80vmin] -translate-x-1/2 -translate-y-1/2 rounded-full"
-        style={{
-          background:
-            "radial-gradient(closest-side, rgba(214,178,110,0.13), rgba(214,178,110,0.04) 55%, transparent 75%)",
-        }}
-      />
-
-      {/* film grain over the whole room */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-overlay"
-        style={{ backgroundImage: `url("${NOISE}")`, backgroundSize: "180px" }}
-      />
-
-      {/* stage — entrance fade, then float while sealed */}
-      <motion.div
-        className="relative"
-        style={{ width: "min(85vw, 420px)" }}
-        initial={{ opacity: 0, y: 26, scale: 0.965 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={reduced ? { duration: 0 } : { duration: 2.4, delay: 0.5, ease: easeOutLong }}
+        animate={foldExit}
+        transition={exitTransition}
       >
-        <motion.div
-          className="relative"
-          animate={
-            sealed && !reduced
-              ? { y: [0, -9, 0], rotate: [0, 0.45, 0, -0.35, 0] }
-              : { y: 0, rotate: 0 }
-          }
-          transition={
-            sealed && !reduced
-              ? { duration: 9, repeat: Infinity, ease: "easeInOut" }
-              : { duration: 0.8, ease: "easeOut" }
-          }
-          style={{ aspectRatio: "7 / 5", perspective: 1400 }}
-        >
-          {/* interior back wall */}
-          <motion.div
-            className="absolute inset-0 z-0"
-            initial={false}
-            animate={envelopeExit}
-            transition={exitTransition}
-          >
-            <EnvelopeBase />
-          </motion.div>
-
-          {/* the invitation card */}
-          <motion.div
-            className="absolute z-20"
-            style={{ left: "6%", width: "88%", top: "7%", height: "86%" }}
-            initial={false}
-            animate={
-              done
-                ? { y: "0%", scale: 1.12, opacity: settled ? 0 : 1 }
-                : cardOut
-                  ? { y: "-58%", scale: 1, opacity: 1 }
-                  : { y: "0%", scale: 1, opacity: 1 }
-            }
-            transition={{ duration: reduced ? 0 : done ? 1.4 : 1.2, ease: easeCinematic }}
-          >
-            <InvitationCard />
-          </motion.div>
-
-          {/* front pocket */}
-          <motion.div
-            className="absolute inset-0 z-30"
-            style={{ filter: "drop-shadow(0 18px 28px rgba(0,0,0,0.45))" }}
-            initial={false}
-            animate={envelopeExit}
-            transition={exitTransition}
-          >
-            <EnvelopePocket />
-          </motion.div>
-
-          {/* top flap — hinged at the top edge, rotates up and over */}
-          <motion.div
-            className="absolute left-0 top-0 w-full"
-            style={{
-              height: "67%",
-              transformOrigin: "50% 0%",
-              transformStyle: "preserve-3d",
-              zIndex: flapOpen ? 10 : 40,
-            }}
-            initial={false}
-            animate={{
-              rotateX: flapOpen ? -172 : 0,
-              opacity: done ? 0 : 1,
-              y: done ? 60 : 0,
-            }}
-            transition={{
-              rotateX: { duration: reduced ? 0 : 1.1, ease: easeCinematic },
-              ...exitTransition,
-            }}
-          >
-            <div className="absolute inset-0" style={{ backfaceVisibility: "hidden" }}>
-              <TopFlap face="outer" />
-            </div>
-            <div
-              className="absolute inset-0"
-              style={{ backfaceVisibility: "hidden", transform: "rotateX(180deg)" }}
-            >
-              <TopFlap face="inner" />
-            </div>
-          </motion.div>
-
-          {/* wax seal, above everything */}
-          <Seal
-            cracked={stage !== "sealed"}
-            onOpen={open}
-            className="absolute z-50 block"
-            style={{
-              width: "43%",
-              left: "50%",
-              top: "62.6%",
-              transform: "translate(-50%, -50%)",
-            }}
-          />
-        </motion.div>
-
-        {/* contact shadow on the floor beneath */}
-        <motion.div
+        <EnvelopePocket />
+        {/* cotton grain over the folds */}
+        <div
           aria-hidden
-          className="absolute -bottom-12 left-1/2 h-7 w-[68%] -translate-x-1/2 rounded-[50%] blur-xl"
-          style={{ background: "rgba(0,0,0,0.55)" }}
-          initial={{ opacity: 0 }}
-          animate={
-            done
-              ? { opacity: 0 }
-              : reduced || !sealed
-                ? { opacity: 0.5 }
-                : { opacity: [0.55, 0.4, 0.55], scaleX: [1, 0.94, 1] }
-          }
-          transition={
-            reduced || !sealed
-              ? { duration: 0.8 }
-              : { duration: 9, repeat: Infinity, ease: "easeInOut", delay: 0.5 }
-          }
+          className="absolute inset-0 opacity-[0.07]"
+          style={{ backgroundImage: `url("${NOISE}")`, backgroundSize: "180px" }}
         />
-
-        {/* whispered affordance */}
-        <motion.p
-          className="pointer-events-none absolute -bottom-24 left-0 right-0 text-center text-[10px] font-light uppercase"
-          style={{ letterSpacing: "0.4em", color: "#c8b78e", fontFamily: "var(--font-sans)" }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: sealed ? 0.55 : 0 }}
-          transition={{ duration: 1.6, delay: sealed ? 3.5 : 0, ease: "easeInOut" }}
-        >
-          touch the seal
-        </motion.p>
+        {/* soft top light */}
+        <div
+          aria-hidden
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(120% 60% at 50% 0%, rgba(255,252,242,0.5) 0%, rgba(255,252,242,0) 55%)",
+            mixBlendMode: "soft-light",
+          }}
+        />
       </motion.div>
 
-      {/* the invitation, unfolded — the final scene */}
-      {settled && <InvitationSheet />}
+      {/* ── top flap — hinged at the very top of the screen ──────── */}
+      <motion.div
+        className="pointer-events-none fixed left-0 top-0 z-40 w-full"
+        style={{
+          height: POINT,
+          transformOrigin: "50% 0%",
+          transformStyle: "preserve-3d",
+          zIndex: flapOpen ? 20 : 40,
+        }}
+        initial={false}
+        animate={{ rotateX: flapOpen ? -168 : 0, opacity: settled ? 0 : 1 }}
+        transition={{
+          rotateX: { duration: reduced ? 0 : 1.2, ease: easeCinematic },
+          opacity: exitTransition,
+        }}
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            backfaceVisibility: "hidden",
+            filter: "drop-shadow(0 10px 18px rgba(90,68,38,0.28))",
+          }}
+        >
+          <TopFlap face="outer" />
+          <div
+            aria-hidden
+            className="absolute inset-0 opacity-[0.07]"
+            style={{
+              backgroundImage: `url("${NOISE}")`,
+              backgroundSize: "180px",
+              clipPath: "polygon(0 0, 100% 0, 50% 100%)",
+            }}
+          />
+        </div>
+        <div
+          className="absolute inset-0"
+          style={{ backfaceVisibility: "hidden", transform: "rotateX(180deg)" }}
+        >
+          <TopFlap face="inner" />
+        </div>
+      </motion.div>
+
+      {/* ── wax seal at the flap point ────────────────────────────── */}
+      <motion.div
+        className="fixed z-50"
+        style={{
+          left: "50%",
+          top: POINT,
+          width: "min(38vw, 190px)",
+          x: "-50%",
+          y: "-50%",
+        }}
+        initial={false}
+        animate={{ opacity: stage === "opening" || settled ? 0 : 1 }}
+        transition={{ duration: 0.3 }}
+      >
+        <Seal cracked={stage !== "sealed"} onOpen={open} className="block w-full" />
+      </motion.div>
+
+      {/* ── tap hint below the seal ───────────────────────────────── */}
+      <motion.div
+        className="pointer-events-none fixed left-1/2 z-50 -translate-x-1/2 text-center"
+        style={{ top: `calc(${POINT} + min(22vw, 110px))` }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: sealed ? 1 : 0 }}
+        transition={{ duration: 1.2, delay: sealed ? 2.2 : 0 }}
+      >
+        <motion.svg
+          viewBox="0 0 24 24"
+          className="mx-auto h-7 w-7"
+          fill="none"
+          stroke="#8a7a63"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          animate={reduced ? undefined : { y: [0, -5, 0] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+          aria-hidden
+        >
+          {/* pointing hand */}
+          <path d="M12 3v8" />
+          <path d="M12 11l0 5" opacity="0" />
+          <path d="M9.5 10.5V6a1.5 1.5 0 0 1 3 0v4" opacity="0" />
+          <path d="M12 11c0-1 .7-1.8 1.6-1.8s1.6.8 1.6 1.8v1c0 .5.4.8.9.6l1.2-.5c.9-.4 1.9.1 2.1 1.1l.4 2.2c.4 2.4-1.4 4.6-3.8 4.6h-3.4c-1.3 0-2.5-.6-3.2-1.7l-3-4.4c-.5-.7-.3-1.7.5-2.1.6-.3 1.4-.2 1.9.4l1.2 1.3" />
+        </motion.svg>
+        <p
+          className="mt-2 text-[9px] font-light uppercase"
+          style={{ fontFamily: "var(--font-sans)", letterSpacing: "0.4em", color: "#8a7a63" }}
+        >
+          tap the seal
+        </p>
+      </motion.div>
     </main>
   );
 }

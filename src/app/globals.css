@@ -25,13 +25,14 @@
   --color-charcoal-deep: var(--charcoal-deep);
   --font-serif: var(--font-serif);
   --font-sans: var(--font-sans);
+  --font-script: var(--font-script);
 }
 
 html,
 body {
   height: 100%;
-  background: var(--charcoal-deep);
-  color: var(--ivory);
+  background: var(--ivory);
+  color: var(--taupe);
   font-family: var(--font-serif), Georgia, serif;
   -webkit-font-smoothing: antialiased;
   overscroll-behavior: none;

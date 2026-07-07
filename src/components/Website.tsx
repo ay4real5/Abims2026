@@ -371,10 +371,15 @@ export default function Website() {
             <Countdown />
           </div>
 
-          <div className="mt-12 flex flex-col items-center gap-4">
-            <a href="#rsvp" className="inline-block rounded-full px-14 py-4 text-[12px] uppercase transition-transform active:scale-95" style={{ ...sans, letterSpacing: "0.3em", color: "#f6efe1", background: "linear-gradient(180deg,#b7995c,#8f7340)", boxShadow: "0 8px 24px rgba(120,90,40,0.25)" }}>
+          <div id="rsvp" className="mt-12 flex scroll-mt-24 flex-col items-center gap-4">
+            <button onClick={() => setRsvpOpen(true)} className="inline-block rounded-full px-14 py-4 text-[12px] uppercase transition-transform active:scale-95" style={{ ...sans, letterSpacing: "0.3em", color: "#f6efe1", background: "linear-gradient(180deg,#b7995c,#8f7340)", boxShadow: "0 8px 24px rgba(120,90,40,0.25)" }}>
               RSVP now
-            </a>
+            </button>
+            {replied && (
+              <p className="text-sm italic" style={{ ...serif, color: "#8a7a63" }}>
+                You replied: {replied === "yes" ? "joyfully accepting" : "regretfully declining"}
+              </p>
+            )}
             <a href="#details" className="text-[11px] font-light uppercase underline underline-offset-4" style={{ ...sans, letterSpacing: "0.25em", color: "#8f7340" }}>
               View venues
             </a>
@@ -540,8 +545,8 @@ export default function Website() {
         )}
       </AnimatePresence>
 
-      {/* ═ RSVP (full-bleed photo band) ═ */}
-      <section id="rsvp" className="relative overflow-hidden px-6 py-32 text-center">
+      {/* ═ A QUIET PHOTO MOMENT (the RSVP now lives in the countdown block) ═ */}
+      <section className="relative h-[52vh] overflow-hidden">
         <motion.div
           className="absolute inset-0"
           animate={reduced ? undefined : { scale: [1, 1.06] }}
@@ -549,21 +554,10 @@ export default function Website() {
         >
           <Photo src={site.photos.rsvp} alt="" quality={95} sizes="100vw" className="h-full w-full" monogram={!site.photos.rsvp} position="center 35%" />
         </motion.div>
-        <div className="absolute inset-0" style={{ background: site.photos.rsvp ? "linear-gradient(180deg, rgba(24,16,6,0.66), rgba(24,16,6,0.78))" : "rgba(30,22,10,0.35)" }} />
-        <div className="relative mx-auto max-w-xl">
-          <Title kicker="Kindly reply" title="Will You Join Us?" light />
-          <motion.p {...reveal} className="text-lg font-light italic" style={{ color: "#fbf1da" }}>We would be honoured to celebrate this day with you.</motion.p>
-          <motion.button
-            {...reveal}
-            onClick={() => setRsvpOpen(true)}
-            className="mt-10 inline-block rounded-full px-16 py-5 text-[12px] uppercase transition-transform active:scale-95"
-            style={{ ...sans, letterSpacing: "0.32em", color: "#3a2c14", background: "linear-gradient(180deg,#f0dca6,#d9b975)", boxShadow: "0 10px 30px rgba(0,0,0,0.3)" }}
-          >
-            RSVP
-          </motion.button>
-          {replied && <p className="mt-6 text-sm italic" style={{ color: "#e7d4a6" }}>You replied: {replied === "yes" ? "joyfully accepting" : "regretfully declining"}</p>}
-          <p className="mt-8">
-            <a href={waShare(site.blessingMessage)} target="_blank" rel="noopener noreferrer" className="text-[11px] font-light uppercase underline underline-offset-4" style={{ ...sans, letterSpacing: "0.22em", color: "#f0dca6" }}>Leave a blessing</a>
+        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(24,16,6,0.4), rgba(24,16,6,0.55))" }} />
+        <div className="relative flex h-full items-center justify-center px-6 text-center">
+          <p className="text-3xl italic sm:text-4xl" style={{ ...scriptFont, color: "#fdf3de", textShadow: "0 2px 16px rgba(0,0,0,0.6)" }}>
+            We can&apos;t wait to celebrate with you
           </p>
         </div>
       </section>

@@ -59,8 +59,13 @@ export const site = {
   /** Gift note; account details optional. Empty giftNote hides the section. */
   giftNote:
     "Your presence is the greatest gift. Should you wish to honour us further, a contribution would be warmly received.",
-  /** ✏️ Replace the account number & sort code with the real ones. */
-  giftDetails: "Oyewole Oyebimpe  ·  Acct 0000000000  ·  Sort 00-00-00",
+  /** ✏️ Real bank details for gifts. Any field left "" is hidden automatically. */
+  gift: {
+    accountName: "Oyewole Oyebimpe",
+    bank: "" /* e.g. "Monzo Bank" */,
+    accountNumber: "0000000000",
+    sortCode: "00-00-00",
+  },
 
   /** Questions & answers. Empty array hides the FAQ. */
   faq: [

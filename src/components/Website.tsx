@@ -291,6 +291,69 @@ function GalleryCarousel({ photos, captions, onOpen }: { photos: string[]; capti
   );
 }
 
+/* ── gift details modal ──────────────────────────────────────── */
+const hasGiftDetails = Boolean(
+  site.gift.accountName || site.gift.accountNumber || site.gift.sortCode || site.gift.bank,
+);
+
+function GiftRow({ label, value, copyable }: { label: string; value: string; copyable?: boolean }) {
+  const [copied, setCopied] = useState(false);
+  if (!value) return null;
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(value.replace(/\s/g, ""));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      /* clipboard blocked — value is still visible to read */
+    }
+  };
+  return (
+    <div className="flex items-center justify-between gap-4 border-b py-3.5 last:border-b-0" style={{ borderColor: "rgba(169,138,82,0.2)" }}>
+      <div className="text-left">
+        <p className="text-[9px] font-light uppercase" style={{ ...sans, letterSpacing: "0.25em", color: "#a98a52" }}>{label}</p>
+        <p className="mt-1 text-[17px]" style={{ ...serif, color: "#463726" }}>{value}</p>
+      </div>
+      {copyable && (
+        <button onClick={copy} className="shrink-0 rounded-full px-4 py-1.5 text-[10px] uppercase transition-colors" style={{ ...sans, letterSpacing: "0.15em", color: copied ? "#3f8c46" : "#8f7340", border: `1px solid ${copied ? "rgba(63,140,70,0.5)" : "rgba(169,138,82,0.45)"}` }}>
+          {copied ? "Copied ✓" : "Copy"}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function GiftModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div className="fixed inset-0 z-[85] flex items-center justify-center px-6 py-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <button aria-label="Close" className="absolute inset-0" style={{ background: "rgba(30,22,10,0.55)", backdropFilter: "blur(6px)" }} onClick={onClose} />
+          <motion.div className="relative max-h-[86vh] w-full max-w-sm overflow-y-auto rounded-2xl px-7 py-9" style={{ background: "linear-gradient(178deg,#faf5ea,#f1e7d0)" }} initial={{ scale: 0.95, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 12 }} transition={{ duration: 0.4, ease: EASE }}>
+            <p className="text-center text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.35em", color: "#a98a52" }}>With gratitude</p>
+            <h3 className="mt-3 text-center text-3xl italic" style={{ ...serif, color: "#463726" }}>Gift Details</h3>
+            <p className="mx-auto mt-4 max-w-xs text-center text-sm font-light italic leading-relaxed" style={{ ...serif, color: "#6b5d4f" }}>
+              If you would like to bless us with a gift, you can send it to the account below.
+            </p>
+
+            <div className="mt-6 rounded-xl px-5" style={{ background: "#fffdf7", border: "1px solid rgba(169,138,82,0.3)" }}>
+              <GiftRow label="Account name" value={site.gift.accountName} />
+              <GiftRow label="Bank" value={site.gift.bank} />
+              <GiftRow label="Account number" value={site.gift.accountNumber} copyable />
+              <GiftRow label="Sort code" value={site.gift.sortCode} copyable />
+            </div>
+
+            <p className="mt-5 text-center text-[11px] font-light italic" style={{ ...serif, color: "#8a7a63" }}>
+              Thank you for your love and generosity.
+            </p>
+            <button onClick={onClose} className="mt-6 block w-full text-center text-[10px] font-light uppercase underline underline-offset-4" style={{ ...sans, letterSpacing: "0.3em", color: "#8a7a63" }}>Close</button>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 /* ── blessings wall ──────────────────────────────────────────── */
 function BlessingWall() {
   const [name, setName] = useState("");
@@ -526,7 +589,7 @@ export default function Website() {
             <p className="text-2xl" style={{ ...scriptFont, color: "#a98a52" }}>&amp; &#10047;</p>
             <h2 className="mt-4 text-4xl italic" style={{ ...serif, color: "#463726" }}>Gifts</h2>
             <motion.p {...reveal} className="mt-8 text-lg font-light italic leading-relaxed" style={{ color: "#5b4a35" }}>{site.giftNote}</motion.p>
-            {site.giftDetails && (
+            {hasGiftDetails && (
               <motion.button {...reveal} onClick={() => setGiftsOpen(true)} className="mt-10 inline-block rounded-full px-14 py-4 text-[12px] uppercase transition-transform active:scale-95" style={{ ...sans, letterSpacing: "0.3em", color: "#f6efe1", background: "linear-gradient(180deg,#b7995c,#8f7340)", boxShadow: "0 8px 24px rgba(120,90,40,0.22)" }}>
                 View gift details
               </motion.button>
@@ -536,19 +599,7 @@ export default function Website() {
       )}
 
       {/* Gifts modal */}
-      <AnimatePresence>
-        {giftsOpen && (
-          <motion.div className="fixed inset-0 z-[85] flex items-center justify-center px-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <button aria-label="Close" className="absolute inset-0" style={{ background: "rgba(30,22,10,0.55)", backdropFilter: "blur(6px)" }} onClick={() => setGiftsOpen(false)} />
-            <motion.div className="relative w-full max-w-sm rounded-2xl px-8 py-10 text-center" style={{ background: "linear-gradient(178deg,#faf5ea,#f1e7d0)" }} initial={{ scale: 0.95, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 12 }} transition={{ duration: 0.4, ease: EASE }}>
-              <p className="text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.35em", color: "#a98a52" }}>With gratitude</p>
-              <h3 className="mt-3 text-2xl italic" style={{ ...serif, color: "#463726" }}>Gift Details</h3>
-              <p className="mt-6 whitespace-pre-line text-base italic leading-relaxed" style={{ ...serif, color: "#5b4a35" }}>{site.giftDetails}</p>
-              <button onClick={() => setGiftsOpen(false)} className="mt-8 text-[10px] font-light uppercase underline underline-offset-4" style={{ ...sans, letterSpacing: "0.3em", color: "#8a7a63" }}>Close</button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <GiftModal open={giftsOpen} onClose={() => setGiftsOpen(false)} />
 
       {/* ═ A QUIET PHOTO MOMENT (the RSVP now lives in the countdown block) ═ */}
       <section className="relative h-[52vh] overflow-hidden">

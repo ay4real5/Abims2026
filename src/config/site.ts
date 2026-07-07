@@ -33,19 +33,19 @@ export const site = {
     {
       numeral: "II",
       chapter: "Friends, First",
-      lines: "The interview ended. The conversations didn't. Days became weeks, and the best part of every one of them was her.",
+      lines: "The interview ended. The conversations didn't. Days became weeks, and the best part of every one of them was being together.",
       photo: "/photos/a2.jpg",
     },
     {
       numeral: "III",
       chapter: "The Question That Mattered",
-      lines: "I'd asked her a hundred questions. Beneath a heart of roses, I finally asked the only one that ever mattered.",
+      lines: "I'd asked her a hundred questions. On 9th September 2025, I finally asked the only one that ever mattered.",
       photo: "/photos/a1.jpg",
     },
     {
       numeral: "IV",
       chapter: "Forever",
-      lines: "She said yes. On the fifteenth of August, before everyone we love, we make it forever.",
+      lines: "She said yes. From that day, our forever began — and now we cannot wait to celebrate it with everyone we love.",
       photo: "/photos/a5.jpg",
     },
   ],
@@ -109,8 +109,8 @@ export const site = {
   gift: {
     accountName: "Oyewole Oyebimpe",
     bank: "" /* e.g. "Monzo Bank" */,
-    accountNumber: "0000000000",
-    sortCode: "00-00-00",
+    accountNumber: "08340063",
+    sortCode: "77-71-43",
   },
 
   /** Questions & answers. Empty array hides the FAQ. */

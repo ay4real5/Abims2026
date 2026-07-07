@@ -354,7 +354,7 @@ function GiftModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
     <AnimatePresence>
       {open && (
-        <motion.div className="fixed inset-0 z-[85] flex items-center justify-center px-6 py-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+        <motion.div className="fixed inset-0 z-[100] flex items-center justify-center px-6 py-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
           <button aria-label="Close" className="absolute inset-0" style={{ background: "rgba(30,22,10,0.55)", backdropFilter: "blur(6px)" }} onClick={onClose} />
           <motion.div className="relative max-h-[86vh] w-full max-w-sm overflow-y-auto rounded-2xl px-7 py-9" style={{ background: "linear-gradient(178deg,#faf5ea,#f1e7d0)" }} initial={{ scale: 0.95, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 12 }} transition={{ duration: 0.4, ease: EASE }}>
             <p className="text-center text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.35em", color: "#a98a52" }}>With gratitude</p>
@@ -828,16 +828,20 @@ export default function Website() {
             <h2 className="mt-4 text-4xl italic" style={{ ...serif, color: "#463726" }}>Gifts</h2>
             <motion.p {...reveal} className="mt-8 text-lg font-light italic leading-relaxed" style={{ color: "#5b4a35" }}>{site.giftNote}</motion.p>
             {hasGiftDetails && (
-              <motion.button {...reveal} onClick={() => setGiftsOpen(true)} className="mt-10 inline-block rounded-full px-14 py-4 text-[12px] uppercase transition-transform active:scale-95" style={{ ...sans, letterSpacing: "0.3em", color: "#f6efe1", background: "linear-gradient(180deg,#b7995c,#8f7340)", boxShadow: "0 8px 24px rgba(120,90,40,0.22)" }}>
-                View gift details
-              </motion.button>
+              <motion.div {...reveal} className="mt-10 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setGiftsOpen(true)}
+                  className="relative z-10 inline-block cursor-pointer rounded-full px-14 py-4 text-[12px] uppercase transition-transform active:scale-95"
+                  style={{ ...sans, letterSpacing: "0.3em", color: "#f6efe1", background: "linear-gradient(180deg,#b7995c,#8f7340)", boxShadow: "0 8px 24px rgba(120,90,40,0.22)" }}
+                >
+                  View gift details
+                </button>
+              </motion.div>
             )}
           </div>
         </section>
       )}
-
-      {/* Gifts modal */}
-      <GiftModal open={giftsOpen} onClose={() => setGiftsOpen(false)} />
 
       {/* ═ A QUIET PHOTO MOMENT (the RSVP now lives in the countdown block) ═ */}
       <section className="relative h-[52vh] overflow-hidden">
@@ -886,6 +890,7 @@ export default function Website() {
         )}
       </footer>
 
+      <GiftModal open={giftsOpen} onClose={() => setGiftsOpen(false)} />
       <RsvpModal open={rsvpOpen} onClose={() => setRsvpOpen(false)} onChoose={(c) => { setReplied(c); localStorage.setItem("abims-rsvp", c); }} />
       <Lightbox src={lightbox} onClose={() => setLightbox(null)} />
     </div>

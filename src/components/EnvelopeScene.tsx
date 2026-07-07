@@ -350,8 +350,8 @@ export default function EnvelopeScene() {
       {/* the website — begins warming up behind the light before we arrive */}
       {(revealing || done) && (
         <motion.div
-          initial={reduced ? undefined : { opacity: 0, scale: 1.09, filter: "blur(8px)" }}
-          animate={reduced ? undefined : { opacity: 1, scale: 1, filter: "blur(0px)" }}
+          initial={reduced ? undefined : { opacity: 0 }}
+          animate={reduced ? undefined : { opacity: 1 }}
           transition={{ duration: 2.45, ease: easeOutSoft }}
         >
           <Website />

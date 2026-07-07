@@ -27,7 +27,7 @@ const sans = Jost({
 });
 
 const previewTitle = `${site.coupleNames} Wedding Invitation`;
-const previewDescription = `Join us as ${site.coupleNames} celebrate their wedding on ${site.dateLine}.`;
+const previewDescription = `You're warmly invited — ${site.dateLine}. Tap to open your invitation.`;
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://abims2026.vercel.app"),
@@ -39,14 +39,6 @@ export const metadata: Metadata = {
     description: previewDescription,
     url: "https://abims2026.vercel.app",
     siteName: "Abims 2026",
-    images: [
-      {
-        url: site.photos.hero,
-        width: 1200,
-        height: 1600,
-        alt: site.coupleNames,
-      },
-    ],
     locale: "en_GB",
     type: "website",
   },
@@ -54,7 +46,6 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: previewTitle,
     description: previewDescription,
-    images: [site.photos.hero],
   },
 };
 

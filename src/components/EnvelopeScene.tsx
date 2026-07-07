@@ -61,14 +61,16 @@ export default function EnvelopeScene() {
   const done = stage === "done";
 
   return (
-    <main className="relative min-h-[100dvh]" style={{ perspective: 1200 }}>
+    <main className="relative min-h-[100dvh]">
       {/* the website underneath */}
       {done && <Website />}
 
-      {/* the envelope intro gate */}
+      {/* the envelope intro gate — perspective lives here so it doesn't
+          trap the website's fixed-position modals inside <main> */}
       {!done && (
           <motion.div
             className="fixed inset-0 z-50 h-[100dvh] overflow-hidden"
+            style={{ perspective: 1200 }}
           >
             {/* folds */}
             <motion.div

@@ -125,6 +125,21 @@ function StoryList({ chapters, reduced }: { chapters: Chapter[]; reduced: boolea
           <StoryCard key={i} c={c} index={i} reduced={reduced} />
         ))}
       </div>
+      <motion.div
+        initial={reduced ? undefined : { opacity: 0, y: 24 }}
+        whileInView={reduced ? undefined : { opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.9, ease: EASE }}
+        className="relative mx-auto mt-16 max-w-2xl px-6 text-center md:mt-24"
+      >
+        <span className="block text-3xl leading-none" style={{ color: "#c8a25c" }}>❝</span>
+        <p className="mt-3 text-xl font-light italic leading-relaxed sm:text-2xl" style={{ ...serif, color: "#5b4a35" }}>
+          He has made everything beautiful in its time.
+        </p>
+        <p className="mt-4 text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.34em", color: "#8f7340" }}>
+          Ecclesiastes 3:11
+        </p>
+      </motion.div>
     </div>
   );
 }

@@ -6,13 +6,6 @@ import { site } from "@/config/site";
 
 export type RsvpChoice = "yes" | "no";
 
-function waLink(message: string) {
-  const text = encodeURIComponent(message);
-  return site.whatsappNumber
-    ? `https://wa.me/${site.whatsappNumber}?text=${text}`
-    : `https://wa.me/?text=${text}`;
-}
-
 const serif = { fontFamily: "var(--font-serif)" };
 const sans = { fontFamily: "var(--font-sans)" };
 
@@ -49,18 +42,6 @@ export default function RsvpModal({ open, onClose, onChoose }: Props) {
       setError("");
     }
   }, [open]);
-
-  const message = () => {
-    const lines = [
-      `RSVP · ${site.coupleNames} ${site.hashtag}`,
-      `Attending: ${choice === "yes" ? "Yes 🥂" : "No"}`,
-      name && `Name: ${name}`,
-      email && `Email: ${email}`,
-      phone && `Phone: ${phone}`,
-      choice === "yes" && `Guests (incl. me): ${guests}`,
-    ].filter(Boolean);
-    return lines.join("\n");
-  };
 
   const pickNo = () => {
     setChoice("no");
@@ -104,12 +85,12 @@ export default function RsvpModal({ open, onClose, onChoose }: Props) {
         const data = await res.json().catch(() => null);
         if (!res.ok || !data?.success) {
           setSubmitting(false);
-          setError("Something went wrong sending your RSVP — please try again, or send it on WhatsApp below.");
+          setError("Something went wrong sending your RSVP — please try again in a moment.");
           return;
         }
       } catch {
         setSubmitting(false);
-        setError("We couldn't reach the RSVP service — please check your connection and try again, or send it on WhatsApp below.");
+        setError("We couldn't send your RSVP — please check your connection and try again.");
         return;
       }
     }
@@ -117,8 +98,6 @@ export default function RsvpModal({ open, onClose, onChoose }: Props) {
     setSubmitting(false);
     setStep("done");
   };
-  const sendWhatsApp = () => window.open(waLink(message()), "_blank", "noopener,noreferrer");
-
   const field = {
     ...sans,
     background: "#fffdf7",
@@ -180,7 +159,7 @@ export default function RsvpModal({ open, onClose, onChoose }: Props) {
 
                 <input value={name} onChange={(e) => { setName(e.target.value); setError(""); }} autoComplete="name" placeholder="Full name" className="mt-5 w-full rounded-lg px-4 py-3 text-[16px] outline-none focus:ring-2 focus:ring-[#c8a25c]/35" style={field} />
                 <input value={email} onChange={(e) => { setEmail(e.target.value); setError(""); }} type="email" inputMode="email" autoComplete="email" placeholder="Email (for your confirmation)" className="mt-3 w-full rounded-lg px-4 py-3 text-[16px] outline-none focus:ring-2 focus:ring-[#c8a25c]/35" style={field} />
-                <input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" inputMode="tel" autoComplete="tel" placeholder="Phone number" className="mt-3 w-full rounded-lg px-4 py-3 text-[16px] outline-none focus:ring-2 focus:ring-[#c8a25c]/35" style={field} />
+                <input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" inputMode="tel" autoComplete="tel" placeholder="Phone number (optional)" className="mt-3 w-full rounded-lg px-4 py-3 text-[16px] outline-none focus:ring-2 focus:ring-[#c8a25c]/35" style={field} />
 
                 <p className="mt-5 text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.2em", color: "#8a7a63" }}>How many of you? (including you)</p>
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -199,11 +178,6 @@ export default function RsvpModal({ open, onClose, onChoose }: Props) {
                 </div>
 
                 {error && <p className="mt-4 text-[12px] italic" style={{ ...serif, color: "#b4562f" }}>{error}</p>}
-                {error && error.includes("WhatsApp") && (
-                  <button onClick={() => { sendWhatsApp(); onChoose("yes"); setStep("done"); }} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-[11px] uppercase transition-transform active:scale-95" style={{ ...sans, letterSpacing: "0.25em", color: "#f6efe1", background: "linear-gradient(180deg, #55a95b, #3f8c46)" }}>
-                    Send my RSVP on WhatsApp
-                  </button>
-                )}
 
                 <button onClick={submit} disabled={submitting} className="mt-6 w-full rounded-full py-3.5 text-[12px] uppercase transition-transform active:scale-95 disabled:opacity-70" style={{ ...sans, letterSpacing: "0.3em", color: "#f6efe1", background: "linear-gradient(180deg,#b7995c,#8f7340)", boxShadow: "0 6px 18px rgba(120,90,40,0.25)" }}>
                   {submitting ? "Sending…" : "Send RSVP"}
@@ -223,17 +197,10 @@ export default function RsvpModal({ open, onClose, onChoose }: Props) {
                     : "Thank you for letting us know. You'll be there in spirit."}
                 </p>
 
-                {site.rsvpEndpoint && choice === "yes" ? (
-                  <>
-                    <p className="mt-6 text-[12px] uppercase" style={{ ...sans, letterSpacing: "0.2em", color: "#8f7340" }}>✓ Your RSVP has been recorded</p>
-                    <button onClick={sendWhatsApp} className="mt-4 text-[10px] font-light uppercase underline-offset-4 hover:underline" style={{ ...sans, letterSpacing: "0.25em", color: "#8a7a63" }}>Also message them on WhatsApp</button>
-                  </>
-                ) : (
-                  <button onClick={sendWhatsApp} className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[11px] uppercase transition-transform active:scale-95" style={{ ...sans, letterSpacing: "0.25em", color: "#f6efe1", background: "linear-gradient(180deg, #55a95b, #3f8c46)" }}>
-                    {choice === "yes" ? "Send my details on WhatsApp" : "Tell them on WhatsApp"}
-                  </button>
+                {site.rsvpEndpoint && choice === "yes" && (
+                  <p className="mt-6 text-[12px] uppercase" style={{ ...sans, letterSpacing: "0.2em", color: "#8f7340" }}>✓ Your RSVP has been recorded</p>
                 )}
-                <button onClick={onClose} className="mt-4 block w-full text-[10px] font-light uppercase underline-offset-4 hover:underline" style={{ ...sans, letterSpacing: "0.3em", color: "#8a7a63" }}>Done</button>
+                <button onClick={onClose} className="mt-6 block w-full text-[10px] font-light uppercase underline-offset-4 hover:underline" style={{ ...sans, letterSpacing: "0.3em", color: "#8a7a63" }}>Done</button>
               </motion.div>
             )}
           </motion.div>

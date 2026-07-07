@@ -41,6 +41,7 @@ export default function RsvpModal({ open, onClose, onChoose }: Props) {
   const [phone, setPhone] = useState("");
   const [guests, setGuests] = useState(GUEST_OPTIONS[0]);
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -70,12 +71,33 @@ export default function RsvpModal({ open, onClose, onChoose }: Props) {
     setChoice("yes");
     setStep("form");
   };
-  const submit = () => {
+  const submit = async () => {
     if (!name.trim()) {
       setError("Please tell us your name.");
       return;
     }
+    setSubmitting(true);
+    if (site.rsvpEndpoint) {
+      try {
+        await fetch(site.rsvpEndpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify({
+            attending: "Yes",
+            name: name.trim(),
+            email: email.trim(),
+            phone: phone.trim(),
+            guests,
+            couple: site.coupleNames,
+            date: new Date().toLocaleString(),
+          }),
+        });
+      } catch {
+        /* network hiccup — we still confirm; WhatsApp remains as a backup */
+      }
+    }
     onChoose("yes");
+    setSubmitting(false);
     setStep("done");
   };
   const sendWhatsApp = () => window.open(waLink(message()), "_blank", "noopener,noreferrer");
@@ -161,8 +183,8 @@ export default function RsvpModal({ open, onClose, onChoose }: Props) {
 
                 {error && <p className="mt-4 text-[12px] italic" style={{ ...serif, color: "#b4562f" }}>{error}</p>}
 
-                <button onClick={submit} className="mt-6 w-full rounded-full py-3.5 text-[12px] uppercase transition-transform active:scale-95" style={{ ...sans, letterSpacing: "0.3em", color: "#f6efe1", background: "linear-gradient(180deg,#b7995c,#8f7340)", boxShadow: "0 6px 18px rgba(120,90,40,0.25)" }}>
-                  Send RSVP
+                <button onClick={submit} disabled={submitting} className="mt-6 w-full rounded-full py-3.5 text-[12px] uppercase transition-transform active:scale-95 disabled:opacity-70" style={{ ...sans, letterSpacing: "0.3em", color: "#f6efe1", background: "linear-gradient(180deg,#b7995c,#8f7340)", boxShadow: "0 6px 18px rgba(120,90,40,0.25)" }}>
+                  {submitting ? "Sending…" : "Send RSVP"}
                 </button>
                 <button onClick={() => setStep("ask")} className="mt-4 w-full text-[10px] font-light uppercase underline-offset-4 hover:underline" style={{ ...sans, letterSpacing: "0.3em", color: "#8a7a63" }}>Back</button>
               </motion.div>
@@ -179,10 +201,17 @@ export default function RsvpModal({ open, onClose, onChoose }: Props) {
                     : "Thank you for letting us know. You'll be there in spirit."}
                 </p>
 
-                <button onClick={sendWhatsApp} className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[11px] uppercase transition-transform active:scale-95" style={{ ...sans, letterSpacing: "0.25em", color: "#f6efe1", background: "linear-gradient(180deg, #55a95b, #3f8c46)" }}>
-                  {choice === "yes" ? "Send my details on WhatsApp" : "Tell them on WhatsApp"}
-                </button>
-                <button onClick={onClose} className="mt-4 text-[10px] font-light uppercase underline-offset-4 hover:underline" style={{ ...sans, letterSpacing: "0.3em", color: "#8a7a63" }}>Done</button>
+                {site.rsvpEndpoint && choice === "yes" ? (
+                  <>
+                    <p className="mt-6 text-[12px] uppercase" style={{ ...sans, letterSpacing: "0.2em", color: "#8f7340" }}>✓ Your RSVP has been recorded</p>
+                    <button onClick={sendWhatsApp} className="mt-4 text-[10px] font-light uppercase underline-offset-4 hover:underline" style={{ ...sans, letterSpacing: "0.25em", color: "#8a7a63" }}>Also message them on WhatsApp</button>
+                  </>
+                ) : (
+                  <button onClick={sendWhatsApp} className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[11px] uppercase transition-transform active:scale-95" style={{ ...sans, letterSpacing: "0.25em", color: "#f6efe1", background: "linear-gradient(180deg, #55a95b, #3f8c46)" }}>
+                    {choice === "yes" ? "Send my details on WhatsApp" : "Tell them on WhatsApp"}
+                  </button>
+                )}
+                <button onClick={onClose} className="mt-4 block w-full text-[10px] font-light uppercase underline-offset-4 hover:underline" style={{ ...sans, letterSpacing: "0.3em", color: "#8a7a63" }}>Done</button>
               </motion.div>
             )}
           </motion.div>

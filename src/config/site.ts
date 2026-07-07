@@ -24,19 +24,22 @@ export const site = {
   ],
 
   ceremony: {
-    title: "Ceremony",
+    title: "Church Ceremony",
+    icon: "⛪",
     venue: "RCCG Breakthrough Church",
-    address: [] as string[],
+    address: ["44 St George's Rd, Bolton BL1 2DD"],
     time: "10:00 am",
+    mapsUrl:
+      "https://www.google.com/maps/search/?api=1&query=RCCG%20Breakthrough%20Church%2C%2044%20St%20George's%20Rd%2C%20Bolton%20BL1%202DD",
   },
   reception: {
     title: "Reception",
-    venue: "Venue to be announced",
-    address: [] as string[],
+    icon: "🥂",
+    venue: "Blancstorystudios",
+    address: ["M12 6JR"],
     time: "12:00 noon",
+    mapsUrl: "https://www.google.com/maps/search/?api=1&query=Blancstorystudios%2C%20M12%206JR",
   },
-  /** Google Maps share link — "" hides the location link */
-  mapsUrl: "",
 
   dressCode: "Champagne gold & ivory",
   /** His & hers guidance under the dress code. "" hides a line. */
@@ -85,7 +88,16 @@ export const site = {
   },
 
   /**
-   * WhatsApp RSVP. With a number ("2348012345678", no +) the buttons open
+   * ✅ Automatic RSVP collection (recommended). Paste a form endpoint here and
+   * every RSVP lands in one place you can sort/export — no WhatsApp needed.
+   * Easiest: create a free form at https://formspree.io (or web3forms.com),
+   * then paste its endpoint URL, e.g. "https://formspree.io/f/xxxxxxx".
+   * Left "" → the form falls back to sending details via WhatsApp.
+   */
+  rsvpEndpoint: "",
+
+  /**
+   * WhatsApp fallback. With a number ("2348012345678", no +) the buttons open
    * a chat; left "" they open WhatsApp's share sheet with the message.
    */
   whatsappNumber: "",
@@ -96,5 +108,5 @@ export const site = {
   hashtag: "#Abims2026",
 
   /** Shown small in the footer. "" hides it. */
-  photographyCredit: "Blancstorystudios",
+  photographyCredit: "Tobi Dosunmu",
 };

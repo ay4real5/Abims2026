@@ -418,12 +418,13 @@ export default function Website() {
           <div className="grid gap-6 md:grid-cols-2">
             {[site.ceremony, site.reception].map((b) => (
               <motion.div key={b.title} {...reveal} className="rounded-2xl px-8 py-10 text-center" style={{ background: "#fdfaf2", border: "1px solid rgba(169,138,82,0.25)", boxShadow: "0 12px 34px rgba(120,90,40,0.07)" }}>
-                <p className="text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.35em", color: "#a98a52" }}>{b.title}</p>
+                {b.icon && <p className="text-3xl" aria-hidden>{b.icon}</p>}
+                <p className="mt-3 text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.35em", color: "#a98a52" }}>{b.title}</p>
+                <p className="mt-4 text-[13px] font-light uppercase" style={{ ...sans, letterSpacing: "0.28em", color: "#8f7340" }}>{b.time}</p>
                 <h3 className="mt-4 text-2xl italic" style={{ color: "#463726" }}>{b.venue}</h3>
                 {b.address.map((l) => <p key={l} className="mt-1 text-sm font-light italic" style={{ color: "#6b5d4f" }}>{l}</p>)}
-                <p className="mt-4 text-[12px] font-light uppercase" style={{ ...sans, letterSpacing: "0.28em", color: "#8f7340" }}>{b.time}</p>
-                {site.mapsUrl && (
-                  <a href={site.mapsUrl} target="_blank" rel="noopener noreferrer" className="mt-5 inline-block text-[11px] font-light uppercase underline underline-offset-4" style={{ ...sans, letterSpacing: "0.2em", color: "#a98a52" }}>View map</a>
+                {b.mapsUrl && (
+                  <a href={b.mapsUrl} target="_blank" rel="noopener noreferrer" className="mt-6 inline-block rounded-full px-6 py-2.5 text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.22em", color: "#8f7340", border: "1px solid rgba(169,138,82,0.45)" }}>Open directions</a>
                 )}
               </motion.div>
             ))}

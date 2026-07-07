@@ -179,41 +179,37 @@ export default function Website() {
       <Header />
 
       {/* ═ HERO ═ */}
-      <section className="relative flex h-[100dvh] items-center justify-center overflow-hidden text-center">
+      <section className="relative flex h-[100dvh] items-end justify-center overflow-hidden pb-[13dvh] text-center">
         <motion.div
           className="absolute inset-0"
-          animate={reduced ? undefined : { scale: [1, 1.09] }}
-          transition={{ duration: 20, ease: "easeOut", repeat: Infinity, repeatType: "reverse" }}
+          animate={reduced ? undefined : { scale: [1, 1.07] }}
+          transition={{ duration: 24, ease: "easeOut", repeat: Infinity, repeatType: "reverse" }}
         >
-          <Photo src={site.photos.hero} alt={site.coupleNames} priority sizes="100vw" className="h-full w-full" monogram={!site.photos.hero} />
+          <Photo src={site.photos.hero} alt={site.coupleNames} priority quality={95} sizes="100vw" className="h-full w-full" monogram={!site.photos.hero} position="center 30%" />
         </motion.div>
-        {/* legibility scrim */}
-        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(30,22,10,0.45) 0%, rgba(30,22,10,0.12) 30%, rgba(30,22,10,0.3) 60%, rgba(30,22,10,0.68) 100%)" }} />
+        {/* cinematic scrim — light at top so faces read, deep at the base for the type */}
+        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(24,16,6,0.32) 0%, rgba(24,16,6,0.04) 26%, rgba(24,16,6,0.16) 52%, rgba(24,16,6,0.7) 82%, rgba(24,16,6,0.9) 100%)" }} />
 
-        <motion.div className="relative px-6" initial={{ y: 20 }} animate={{ y: 0 }} transition={{ duration: 1, ease: EASE }}>
-          <p className="text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.5em", color: "#f4e6c4", textShadow: "0 1px 10px rgba(0,0,0,0.5)" }}>
+        <motion.div className="relative px-6" initial={{ y: 20, opacity: 0.001 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 1.2, ease: EASE }}>
+          <p className="text-[10px] font-light uppercase sm:text-[11px]" style={{ ...sans, letterSpacing: "0.55em", color: "#eecf8f", textShadow: "0 1px 12px rgba(0,0,0,0.7)" }}>
             We&apos;re getting married
           </p>
-          <h1 className="mx-auto mt-6 max-w-[92vw] break-words leading-[1.08]" style={{ ...scriptFont, fontSize: "clamp(40px, 9vw, 104px)", color: "#fdf8ec", textShadow: "0 2px 22px rgba(0,0,0,0.55), 0 0 60px rgba(0,0,0,0.3)" }}>
+          <h1 className="mx-auto mt-5 max-w-[94vw] break-words leading-[1.06]" style={{ ...scriptFont, fontSize: "clamp(44px, 10vw, 112px)", color: "#fefaf0", textShadow: "0 3px 28px rgba(0,0,0,0.7), 0 0 70px rgba(0,0,0,0.4)" }}>
             {site.coupleNames}
           </h1>
-          <div className="mx-auto mt-6 flex w-40 items-center gap-3">
-            <div className="h-px flex-1" style={{ background: "rgba(244,230,196,0.7)" }} />
-            <span style={{ color: "#f4e6c4" }}>&#10022;</span>
-            <div className="h-px flex-1" style={{ background: "rgba(244,230,196,0.7)" }} />
+          <div className="mx-auto mt-5 flex w-44 items-center gap-3">
+            <div className="h-px flex-1" style={{ background: "linear-gradient(90deg,transparent,rgba(238,207,143,0.85))" }} />
+            <span style={{ color: "#eecf8f" }}>&#10022;</span>
+            <div className="h-px flex-1" style={{ background: "linear-gradient(270deg,transparent,rgba(238,207,143,0.85))" }} />
           </div>
-          <p className="mt-6 text-lg italic sm:text-xl" style={{ color: "#fbf1da", textShadow: "0 1px 12px rgba(0,0,0,0.5)" }}>
+          <p className="mt-5 text-lg italic sm:text-xl" style={{ color: "#fdf3de", textShadow: "0 1px 14px rgba(0,0,0,0.7)" }}>
             {site.dateWords}
-          </p>
-          <p className="mt-1 text-[12px] font-light uppercase" style={{ ...sans, letterSpacing: "0.32em", color: "#e7d4a6", textShadow: "0 1px 8px rgba(0,0,0,0.5)" }}>
-            {site.ceremony.address.at(-1)}
           </p>
         </motion.div>
 
         {/* scroll cue */}
-        <motion.a href="#invite" className="absolute bottom-8 left-1/2 -translate-x-1/2 text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.4, duration: 1 }}>
-          <p className="text-[9px] font-light uppercase" style={{ ...sans, letterSpacing: "0.4em", color: "#f4e6c4" }}>scroll</p>
-          <motion.span className="mt-1 block text-lg" style={{ color: "#f4e6c4" }} animate={reduced ? undefined : { y: [0, 7, 0] }} transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}>⌄</motion.span>
+        <motion.a href="#invite" className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.6, duration: 1 }}>
+          <motion.span className="block text-lg" style={{ color: "#eecf8f" }} animate={reduced ? undefined : { y: [0, 7, 0] }} transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}>⌄</motion.span>
         </motion.a>
       </section>
 
@@ -239,7 +235,10 @@ export default function Website() {
               {site.story.map((para, i) => (
                 <div key={i} className={`flex flex-col items-center gap-8 md:flex-row ${i % 2 ? "md:flex-row-reverse" : ""}`}>
                   <motion.div {...reveal} className="w-full md:w-1/2">
-                    <Photo src={site.photos.story[i]} alt="" sizes="(min-width:768px) 45vw, 90vw" className="aspect-[4/5] w-full rounded-2xl shadow-[0_16px_40px_rgba(120,90,40,0.14)]" />
+                    <div className="relative">
+                      <Photo src={site.photos.story[i]} alt="" quality={95} sizes="(min-width:768px) 45vw, 90vw" className="aspect-[4/5] w-full rounded-2xl shadow-[0_18px_44px_rgba(120,90,40,0.16)]" />
+                      <span className="pointer-events-none absolute inset-0 rounded-2xl" style={{ boxShadow: "inset 0 0 0 1px rgba(143,115,64,0.18)" }} />
+                    </div>
                   </motion.div>
                   <motion.div {...reveal} className="w-full md:w-1/2 text-center md:text-left">
                     <p className="text-lg font-light italic leading-relaxed" style={{ color: "#5b4a35" }}>{para}</p>
@@ -295,16 +294,17 @@ export default function Website() {
         <section id="gallery" className="px-6 py-24" style={{ background: "#faf5ea" }}>
           <div className="mx-auto max-w-5xl">
             <Title kicker="Moments" title="Gallery" />
-            <div className="columns-2 gap-3 sm:columns-3 [&>*]:mb-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
               {site.photos.gallery.map((src, i) => (
                 <motion.button
                   key={src + i}
                   {...reveal}
                   onClick={() => setLightbox(src)}
-                  className="block w-full overflow-hidden rounded-xl"
-                  style={{ aspectRatio: i % 3 === 1 ? "3 / 4" : "1 / 1" }}
+                  className="group relative block aspect-[4/5] w-full overflow-hidden rounded-xl"
+                  style={{ boxShadow: "0 10px 26px rgba(120,90,40,0.12)" }}
                 >
-                  <Photo src={src} alt="" sizes="(min-width:640px) 30vw, 45vw" className="h-full w-full transition-transform duration-500 hover:scale-105" monogram={false} />
+                  <Photo src={src} alt="" quality={95} sizes="(min-width:640px) 30vw, 48vw" className="h-full w-full transition-transform duration-700 group-hover:scale-[1.06]" monogram={false} />
+                  <span className="pointer-events-none absolute inset-0 rounded-xl" style={{ border: "1px solid rgba(255,248,230,0.15)", boxShadow: "inset 0 0 0 1px rgba(143,115,64,0.12)" }} />
                 </motion.button>
               ))}
             </div>
@@ -343,10 +343,14 @@ export default function Website() {
 
       {/* ═ RSVP (full-bleed photo band) ═ */}
       <section id="rsvp" className="relative overflow-hidden px-6 py-32 text-center">
-        <div className="absolute inset-0">
-          <Photo src={site.photos.rsvp} alt="" sizes="100vw" className="h-full w-full" monogram={!site.photos.rsvp} />
-        </div>
-        <div className="absolute inset-0" style={{ background: site.photos.rsvp ? "linear-gradient(180deg, rgba(30,22,10,0.62), rgba(30,22,10,0.72))" : "rgba(30,22,10,0.35)" }} />
+        <motion.div
+          className="absolute inset-0"
+          animate={reduced ? undefined : { scale: [1, 1.06] }}
+          transition={{ duration: 22, ease: "easeOut", repeat: Infinity, repeatType: "reverse" }}
+        >
+          <Photo src={site.photos.rsvp} alt="" quality={95} sizes="100vw" className="h-full w-full" monogram={!site.photos.rsvp} position="center 35%" />
+        </motion.div>
+        <div className="absolute inset-0" style={{ background: site.photos.rsvp ? "linear-gradient(180deg, rgba(24,16,6,0.66), rgba(24,16,6,0.78))" : "rgba(30,22,10,0.35)" }} />
         <div className="relative mx-auto max-w-xl">
           <Title kicker="Kindly reply" title="Will You Join Us?" light />
           <motion.p {...reveal} className="text-lg font-light italic" style={{ color: "#fbf1da" }}>We would be honoured to celebrate this day with you.</motion.p>

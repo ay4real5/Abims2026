@@ -16,7 +16,7 @@ export default function Photo({
   priority,
   className = "",
   monogram = true,
-  quality = 90,
+  quality = 95,
   position = "center",
 }: {
   src?: string;

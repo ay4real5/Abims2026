@@ -145,7 +145,10 @@ export const site = {
    * then paste its endpoint URL, e.g. "https://formspree.io/f/xxxxxxx".
    * Left "" → the form falls back to sending details via WhatsApp.
    */
-  rsvpEndpoint: "",
+  rsvpEndpoint: "https://api.web3forms.com/submit",
+
+  /** Web3Forms access key — RSVPs are emailed to the address this key was created with. */
+  rsvpAccessKey: "0cea8a4e-04bb-442b-b8ac-0b7b4a22e7ff",
 
   /**
    * WhatsApp fallback. With a number ("2348012345678", no +) the buttons open

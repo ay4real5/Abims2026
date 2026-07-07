@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Jost } from "next/font/google";
 import localFont from "next/font/local";
+import { site } from "@/config/site";
 import "./globals.css";
 
 const script = localFont({
@@ -25,9 +26,27 @@ const sans = Jost({
   display: "swap",
 });
 
+const previewTitle = `${site.coupleNames} Wedding Invitation`;
+const previewDescription = `You're warmly invited — ${site.dateLine}. Tap to open your invitation.`;
+
 export const metadata: Metadata = {
-  title: "Abims · 2026",
-  description: "A private invitation.",
+  metadataBase: new URL("https://abims2026.vercel.app"),
+  title: previewTitle,
+  description: previewDescription,
+  applicationName: previewTitle,
+  openGraph: {
+    title: previewTitle,
+    description: previewDescription,
+    url: "https://abims2026.vercel.app",
+    siteName: "Abims 2026",
+    locale: "en_GB",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: previewTitle,
+    description: previewDescription,
+  },
 };
 
 export const viewport: Viewport = {

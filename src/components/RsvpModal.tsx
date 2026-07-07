@@ -76,24 +76,41 @@ export default function RsvpModal({ open, onClose, onChoose }: Props) {
       setError("Please tell us your name.");
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError("Please enter a valid email so we can confirm your RSVP.");
+      return;
+    }
+    setError("");
     setSubmitting(true);
     if (site.rsvpEndpoint) {
       try {
-        await fetch(site.rsvpEndpoint, {
+        const res = await fetch(site.rsvpEndpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json", Accept: "application/json" },
           body: JSON.stringify({
-            attending: "Yes",
+            access_key: site.rsvpAccessKey,
+            subject: `New RSVP — ${name.trim()}, party of ${guests}`,
+            from_name: "Abims 2026 RSVP",
+            botcheck: "",
+            replyto: email.trim(),
             name: name.trim(),
             email: email.trim(),
             phone: phone.trim(),
+            attending: "Yes",
             guests,
-            couple: site.coupleNames,
-            date: new Date().toLocaleString(),
+            autoresponse: `Dear ${name.trim()},\n\nThank you — your RSVP is confirmed! 🥂\n\nWe can't wait to celebrate with you on ${site.dateLine}.\n\nWith love,\n${site.coupleNames}\n${site.hashtag}`,
           }),
         });
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data?.success) {
+          setSubmitting(false);
+          setError("Something went wrong sending your RSVP — please try again, or send it on WhatsApp below.");
+          return;
+        }
       } catch {
-        /* network hiccup — we still confirm; WhatsApp remains as a backup */
+        setSubmitting(false);
+        setError("We couldn't reach the RSVP service — please check your connection and try again, or send it on WhatsApp below.");
+        return;
       }
     }
     onChoose("yes");
@@ -162,7 +179,7 @@ export default function RsvpModal({ open, onClose, onChoose }: Props) {
                 <p className="mt-1 text-center text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.3em", color: "#a98a52" }}>A few details</p>
 
                 <input value={name} onChange={(e) => { setName(e.target.value); setError(""); }} autoComplete="name" placeholder="Full name" className="mt-5 w-full rounded-lg px-4 py-3 text-[16px] outline-none focus:ring-2 focus:ring-[#c8a25c]/35" style={field} />
-                <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" inputMode="email" autoComplete="email" placeholder="Email" className="mt-3 w-full rounded-lg px-4 py-3 text-[16px] outline-none focus:ring-2 focus:ring-[#c8a25c]/35" style={field} />
+                <input value={email} onChange={(e) => { setEmail(e.target.value); setError(""); }} type="email" inputMode="email" autoComplete="email" placeholder="Email (for your confirmation)" className="mt-3 w-full rounded-lg px-4 py-3 text-[16px] outline-none focus:ring-2 focus:ring-[#c8a25c]/35" style={field} />
                 <input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" inputMode="tel" autoComplete="tel" placeholder="Phone number" className="mt-3 w-full rounded-lg px-4 py-3 text-[16px] outline-none focus:ring-2 focus:ring-[#c8a25c]/35" style={field} />
 
                 <p className="mt-5 text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.2em", color: "#8a7a63" }}>How many of you? (including you)</p>
@@ -182,6 +199,11 @@ export default function RsvpModal({ open, onClose, onChoose }: Props) {
                 </div>
 
                 {error && <p className="mt-4 text-[12px] italic" style={{ ...serif, color: "#b4562f" }}>{error}</p>}
+                {error && error.includes("WhatsApp") && (
+                  <button onClick={() => { sendWhatsApp(); onChoose("yes"); setStep("done"); }} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-[11px] uppercase transition-transform active:scale-95" style={{ ...sans, letterSpacing: "0.25em", color: "#f6efe1", background: "linear-gradient(180deg, #55a95b, #3f8c46)" }}>
+                    Send my RSVP on WhatsApp
+                  </button>
+                )}
 
                 <button onClick={submit} disabled={submitting} className="mt-6 w-full rounded-full py-3.5 text-[12px] uppercase transition-transform active:scale-95 disabled:opacity-70" style={{ ...sans, letterSpacing: "0.3em", color: "#f6efe1", background: "linear-gradient(180deg,#b7995c,#8f7340)", boxShadow: "0 6px 18px rgba(120,90,40,0.25)" }}>
                   {submitting ? "Sending…" : "Send RSVP"}
@@ -197,7 +219,7 @@ export default function RsvpModal({ open, onClose, onChoose }: Props) {
                 <p className="mt-4 text-2xl italic" style={{ ...serif, color: "#4a3d2c" }}>{choice === "yes" ? "Thank you!" : "We'll miss you"}</p>
                 <p className="mt-3 text-sm font-light italic leading-relaxed" style={{ ...serif, color: "#6b5d4f" }}>
                   {choice === "yes"
-                    ? `Your RSVP is noted${name ? `, ${name.split(" ")[0]}` : ""} — we can't wait to celebrate with you.`
+                    ? `Your RSVP is noted${name ? `, ${name.split(" ")[0]}` : ""} — a confirmation email is on its way to you.`
                     : "Thank you for letting us know. You'll be there in spirit."}
                 </p>
 

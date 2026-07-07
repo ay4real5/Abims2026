@@ -1,121 +1,103 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import Image from "next/image";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { site } from "@/config/site";
+import Photo from "./Photo";
 import RsvpModal, { type RsvpChoice } from "./RsvpModal";
 
 const serif = { fontFamily: "var(--font-serif)" };
 const sans = { fontFamily: "var(--font-sans)" };
 const scriptFont = { fontFamily: "var(--font-script), cursive" };
+const EASE = [0.22, 1, 0.36, 1] as const;
 
-/* subtle, standard scroll-in — transform only, so content is never hidden
-   if animation is disabled or JS is slow */
-const inView = {
-  initial: { y: 26 },
+/* transform-only reveal → content is never hidden if animation is skipped */
+const reveal = {
+  initial: { y: 28 },
   whileInView: { y: 0 },
-  viewport: { once: true, margin: "-60px" },
-  transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const },
+  viewport: { once: true, margin: "-70px" },
+  transition: { duration: 0.8, ease: EASE },
 };
 
 function waShare(message: string) {
   const text = encodeURIComponent(message);
-  return site.whatsappNumber
-    ? `https://wa.me/${site.whatsappNumber}?text=${text}`
-    : `https://wa.me/?text=${text}`;
+  return site.whatsappNumber ? `https://wa.me/${site.whatsappNumber}?text=${text}` : `https://wa.me/?text=${text}`;
 }
 
-/* ── reusable section heading ────────────────────────────────── */
-function SectionTitle({ kicker, title }: { kicker: string; title: string }) {
+/* ── section heading ─────────────────────────────────────────── */
+function Title({ kicker, title, light }: { kicker: string; title: string; light?: boolean }) {
   return (
-    <motion.div {...inView} className="mb-12 text-center">
-      <p className="text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.4em", color: "#a98a52" }}>
+    <motion.div {...reveal} className="mb-14 text-center">
+      <p className="text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.42em", color: light ? "#e7d4a6" : "#a98a52" }}>
         {kicker}
       </p>
-      <h2 className="mt-3 text-4xl italic" style={{ ...serif, color: "#463726" }}>
+      <h2 className="mt-3 text-4xl italic sm:text-5xl" style={{ ...serif, color: light ? "#fbf4e6" : "#463726" }}>
         {title}
       </h2>
-      <div className="mx-auto mt-5 flex w-32 items-center gap-2">
-        <div className="h-px flex-1" style={{ background: "rgba(169,138,82,0.5)" }} />
-        <span style={{ color: "#a98a52" }}>&#10022;</span>
-        <div className="h-px flex-1" style={{ background: "rgba(169,138,82,0.5)" }} />
+      <div className="mx-auto mt-5 flex w-28 items-center gap-2">
+        <div className="h-px flex-1" style={{ background: light ? "rgba(231,212,166,0.6)" : "rgba(169,138,82,0.5)" }} />
+        <span style={{ color: light ? "#e7d4a6" : "#a98a52" }}>&#10022;</span>
+        <div className="h-px flex-1" style={{ background: light ? "rgba(231,212,166,0.6)" : "rgba(169,138,82,0.5)" }} />
       </div>
     </motion.div>
   );
 }
 
-/* ── header / nav ────────────────────────────────────────────── */
+/* ── nav ─────────────────────────────────────────────────────── */
 function Header() {
   const [open, setOpen] = useState(false);
+  const [solid, setSolid] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setSolid(window.scrollY > window.innerHeight * 0.7);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   const links = [
     ...(site.story.length ? [["story", "Story"]] : []),
     ["details", "Details"],
     ...(site.timeline.length ? [["schedule", "Schedule"]] : []),
-    ...(site.gallery.length ? [["gallery", "Gallery"]] : []),
+    ...(site.photos.gallery.length ? [["gallery", "Gallery"]] : []),
     ...(site.faq.length ? [["faq", "FAQ"]] : []),
     ["rsvp", "RSVP"],
   ] as [string, string][];
 
+  const ink = solid ? "#6b5d4f" : "#fbf4e6";
+
   return (
     <header
-      className="sticky top-0 z-40 border-b"
+      className="fixed inset-x-0 top-0 z-40 transition-all duration-500"
       style={{
-        background: "rgba(250,245,234,0.9)",
-        backdropFilter: "blur(10px)",
-        borderColor: "rgba(169,138,82,0.25)",
+        background: solid ? "rgba(250,245,234,0.92)" : "transparent",
+        backdropFilter: solid ? "blur(10px)" : "none",
+        borderBottom: solid ? "1px solid rgba(169,138,82,0.25)" : "1px solid transparent",
       }}
     >
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4">
-        <a href="#top" className="text-xl italic" style={{ ...scriptFont, color: "#8f7340" }}>
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
+        <a href="#top" className="text-xl italic transition-colors" style={{ ...scriptFont, color: solid ? "#8f7340" : "#fbf4e6", textShadow: solid ? "none" : "0 1px 6px rgba(0,0,0,0.35)" }}>
           {site.initials[0]}&amp;{site.initials[1]}
         </a>
 
-        {/* desktop links */}
         <nav className="hidden items-center gap-7 md:flex">
           {links.map(([id, label]) => (
-            <a
-              key={id}
-              href={`#${id}`}
-              className="text-[11px] font-light uppercase transition-opacity hover:opacity-60"
-              style={{ ...sans, letterSpacing: "0.22em", color: "#6b5d4f" }}
-            >
+            <a key={id} href={`#${id}`} className="text-[11px] font-light uppercase transition-opacity hover:opacity-70" style={{ ...sans, letterSpacing: "0.22em", color: ink, textShadow: solid ? "none" : "0 1px 6px rgba(0,0,0,0.4)" }}>
               {label}
             </a>
           ))}
-          <a
-            href="#rsvp"
-            className="rounded-full px-5 py-2 text-[11px] uppercase"
-            style={{ ...sans, letterSpacing: "0.22em", color: "#f6efe1", background: "linear-gradient(180deg,#b7995c,#8f7340)" }}
-          >
-            RSVP
-          </a>
         </nav>
 
-        {/* mobile toggle */}
-        <button
-          className="md:hidden"
-          aria-label="Menu"
-          onClick={() => setOpen((v) => !v)}
-          style={{ color: "#8f7340" }}
-        >
+        <button className="md:hidden" aria-label="Menu" onClick={() => setOpen((v) => !v)} style={{ color: ink }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            {open ? <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" /> : <><path d="M4 8h16M4 16h16" strokeLinecap="round" /></>}
+            {open ? <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" /> : <path d="M4 8h16M4 16h16" strokeLinecap="round" />}
           </svg>
         </button>
       </div>
 
-      {/* mobile menu */}
       {open && (
-        <nav className="flex flex-col gap-1 border-t px-5 py-3 md:hidden" style={{ borderColor: "rgba(169,138,82,0.2)" }}>
+        <nav className="flex flex-col gap-1 px-5 py-3 md:hidden" style={{ background: "rgba(250,245,234,0.97)", borderTop: "1px solid rgba(169,138,82,0.2)" }}>
           {links.map(([id, label]) => (
-            <a
-              key={id}
-              href={`#${id}`}
-              onClick={() => setOpen(false)}
-              className="py-2 text-[12px] font-light uppercase"
-              style={{ ...sans, letterSpacing: "0.22em", color: "#6b5d4f" }}
-            >
+            <a key={id} href={`#${id}`} onClick={() => setOpen(false)} className="py-2 text-[12px] font-light uppercase" style={{ ...sans, letterSpacing: "0.22em", color: "#6b5d4f" }}>
               {label}
             </a>
           ))}
@@ -126,18 +108,13 @@ function Header() {
 }
 
 /* ── countdown ───────────────────────────────────────────────── */
-function Countdown() {
+function Countdown({ light }: { light?: boolean }) {
   const [left, setLeft] = useState<null | { d: number; h: number; m: number; s: number }>(null);
   useEffect(() => {
     const target = new Date(site.weddingDateISO).getTime();
     const tick = () => {
       const diff = Math.max(0, target - Date.now());
-      setLeft({
-        d: Math.floor(diff / 86_400_000),
-        h: Math.floor(diff / 3_600_000) % 24,
-        m: Math.floor(diff / 60_000) % 60,
-        s: Math.floor(diff / 1_000) % 60,
-      });
+      setLeft({ d: Math.floor(diff / 86_400_000), h: Math.floor(diff / 3_600_000) % 24, m: Math.floor(diff / 60_000) % 60, s: Math.floor(diff / 1_000) % 60 });
     };
     tick();
     const id = setInterval(tick, 1000);
@@ -149,26 +126,48 @@ function Countdown() {
     { n: left?.m ?? 0, label: "Minutes" },
     { n: left?.s ?? 0, label: "Seconds" },
   ];
+  const num = light ? "#fbf4e6" : "#463726";
+  const lab = light ? "rgba(251,244,230,0.75)" : "#8a7a63";
   return (
     <div className="flex items-stretch justify-center gap-3 sm:gap-5">
       {cells.map((c) => (
-        <div key={c.label} className="min-w-[62px] rounded-lg px-3 py-3 text-center" style={{ background: "rgba(255,250,238,0.7)", border: "1px solid rgba(169,138,82,0.3)" }}>
-          <p className="text-3xl tabular-nums leading-none" style={{ ...serif, color: "#463726" }}>
-            {String(c.n).padStart(2, "0")}
-          </p>
-          <p className="mt-1 text-[8px] font-light uppercase" style={{ ...sans, letterSpacing: "0.2em", color: "#8a7a63" }}>
-            {c.label}
-          </p>
+        <div key={c.label} className="min-w-[62px] rounded-lg px-3 py-3 text-center" style={{ background: light ? "rgba(255,250,238,0.12)" : "rgba(255,250,238,0.7)", border: `1px solid ${light ? "rgba(231,212,166,0.4)" : "rgba(169,138,82,0.3)"}`, backdropFilter: light ? "blur(4px)" : "none" }}>
+          <p className="text-3xl tabular-nums leading-none" style={{ ...serif, color: num }}>{String(c.n).padStart(2, "0")}</p>
+          <p className="mt-1 text-[8px] font-light uppercase" style={{ ...sans, letterSpacing: "0.2em", color: lab }}>{c.label}</p>
         </div>
       ))}
     </div>
   );
 }
 
+/* ── lightbox ────────────────────────────────────────────────── */
+function Lightbox({ src, onClose }: { src: string | null; onClose: () => void }) {
+  return (
+    <AnimatePresence>
+      {src && (
+        <motion.div
+          className="fixed inset-0 z-[90] flex items-center justify-center p-4"
+          style={{ background: "rgba(30,22,10,0.9)", backdropFilter: "blur(6px)" }}
+          onClick={onClose}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <motion.div className="relative h-[80vh] w-full max-w-3xl" initial={{ scale: 0.94 }} animate={{ scale: 1 }} exit={{ scale: 0.96 }} transition={{ duration: 0.35, ease: EASE }}>
+            <Photo src={src} alt="" className="h-full w-full rounded-lg" sizes="90vw" monogram={false} />
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 /* ── the website ─────────────────────────────────────────────── */
 export default function Website() {
+  const reduced = useReducedMotion();
   const [rsvpOpen, setRsvpOpen] = useState(false);
   const [replied, setReplied] = useState<RsvpChoice | null>(null);
+  const [lightbox, setLightbox] = useState<string | null>(null);
 
   useEffect(() => {
     const s = localStorage.getItem("abims-rsvp");
@@ -176,66 +175,76 @@ export default function Website() {
   }, []);
 
   return (
-    <div
-      id="top"
-      className="min-h-[100dvh] w-full"
-      style={{ background: "#faf5ea", color: "#4a3d2c", ...serif }}
-    >
+    <div id="top" style={{ background: "#faf5ea", color: "#4a3d2c", ...serif }}>
       <Header />
 
       {/* ═ HERO ═ */}
-      <section
-        className="relative flex min-h-[92dvh] flex-col items-center justify-center px-6 py-24 text-center"
-        style={{ background: "radial-gradient(120% 90% at 50% 20%, #fdf9ef 0%, #f3e9d2 60%, #ecdfc2 100%)" }}
-      >
+      <section className="relative flex h-[100dvh] items-center justify-center overflow-hidden text-center">
         <motion.div
-          className="w-full"
-          initial={{ y: 18 }}
-          animate={{ y: 0 }}
-          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+          className="absolute inset-0"
+          animate={reduced ? undefined : { scale: [1, 1.09] }}
+          transition={{ duration: 20, ease: "easeOut", repeat: Infinity, repeatType: "reverse" }}
         >
-          <svg viewBox="0 0 120 70" className="mx-auto h-14 w-auto" aria-hidden>
-            <circle cx="48" cy="38" r="24" fill="none" stroke="#a98a52" strokeWidth="1.4" />
-            <circle cx="72" cy="38" r="24" fill="none" stroke="#8f7340" strokeWidth="1.1" opacity="0.8" />
-            <path d="M48 10 l4 5 -4 5 -4 -5 Z" fill="#a98a52" opacity="0.7" />
-          </svg>
-          <p className="mt-8 text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.4em", color: "#a98a52" }}>
+          <Photo src={site.photos.hero} alt={site.coupleNames} priority sizes="100vw" className="h-full w-full" monogram={!site.photos.hero} />
+        </motion.div>
+        {/* legibility scrim */}
+        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(30,22,10,0.45) 0%, rgba(30,22,10,0.12) 30%, rgba(30,22,10,0.3) 60%, rgba(30,22,10,0.68) 100%)" }} />
+
+        <motion.div className="relative px-6" initial={{ y: 20 }} animate={{ y: 0 }} transition={{ duration: 1, ease: EASE }}>
+          <p className="text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.5em", color: "#f4e6c4", textShadow: "0 1px 10px rgba(0,0,0,0.5)" }}>
             We&apos;re getting married
           </p>
-          <h1 className="mx-auto mt-5 max-w-full break-words leading-[1.1]" style={{ ...scriptFont, fontSize: "clamp(34px, 9vw, 84px)", color: "#463726" }}>
+          <h1 className="mx-auto mt-6 max-w-[92vw] break-words leading-[1.08]" style={{ ...scriptFont, fontSize: "clamp(40px, 9vw, 104px)", color: "#fdf8ec", textShadow: "0 2px 22px rgba(0,0,0,0.55), 0 0 60px rgba(0,0,0,0.3)" }}>
             {site.coupleNames}
           </h1>
-          <p className="mt-6 text-lg italic" style={{ color: "#6b5d4f" }}>
+          <div className="mx-auto mt-6 flex w-40 items-center gap-3">
+            <div className="h-px flex-1" style={{ background: "rgba(244,230,196,0.7)" }} />
+            <span style={{ color: "#f4e6c4" }}>&#10022;</span>
+            <div className="h-px flex-1" style={{ background: "rgba(244,230,196,0.7)" }} />
+          </div>
+          <p className="mt-6 text-lg italic sm:text-xl" style={{ color: "#fbf1da", textShadow: "0 1px 12px rgba(0,0,0,0.5)" }}>
             {site.dateWords}
           </p>
-          <p className="mt-1 text-[12px] font-light uppercase" style={{ ...sans, letterSpacing: "0.3em", color: "#8f7340" }}>
+          <p className="mt-1 text-[12px] font-light uppercase" style={{ ...sans, letterSpacing: "0.32em", color: "#e7d4a6", textShadow: "0 1px 8px rgba(0,0,0,0.5)" }}>
             {site.ceremony.address.at(-1)}
           </p>
+        </motion.div>
 
+        {/* scroll cue */}
+        <motion.a href="#invite" className="absolute bottom-8 left-1/2 -translate-x-1/2 text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.4, duration: 1 }}>
+          <p className="text-[9px] font-light uppercase" style={{ ...sans, letterSpacing: "0.4em", color: "#f4e6c4" }}>scroll</p>
+          <motion.span className="mt-1 block text-lg" style={{ color: "#f4e6c4" }} animate={reduced ? undefined : { y: [0, 7, 0] }} transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}>⌄</motion.span>
+        </motion.a>
+      </section>
+
+      {/* ═ INVITATION LINE ═ */}
+      <section id="invite" className="px-6 py-24 text-center" style={{ background: "#faf5ea" }}>
+        <motion.div {...reveal} className="mx-auto max-w-xl">
+          <p className="mx-auto text-3xl italic" style={{ ...scriptFont, color: "#8f7340" }}>{site.initials[0]} &amp; {site.initials[1]}</p>
+          <p className="mt-8 text-xl font-light italic leading-relaxed" style={{ color: "#5b4a35" }}>
+            Together with their families, they joyfully invite you to celebrate their marriage.
+          </p>
           <div className="mt-12">
             <Countdown />
           </div>
-
-          <a
-            href="#rsvp"
-            className="mt-12 inline-block rounded-full px-12 py-4 text-[12px] uppercase transition-transform active:scale-95"
-            style={{ ...sans, letterSpacing: "0.3em", color: "#f6efe1", background: "linear-gradient(180deg,#b7995c,#8f7340)", boxShadow: "0 6px 20px rgba(120,90,40,0.25)" }}
-          >
-            RSVP
-          </a>
         </motion.div>
       </section>
 
-      {/* ═ STORY ═ */}
+      {/* ═ OUR STORY (alternating photo / text) ═ */}
       {site.story.length > 0 && (
-        <section id="story" className="px-6 py-24" style={{ background: "#faf5ea" }}>
-          <div className="mx-auto max-w-3xl">
-            <SectionTitle kicker="How it began" title="Our Story" />
-            <div className="mx-auto max-w-xl space-y-6 text-center">
-              {site.story.map((p, i) => (
-                <motion.p key={i} {...inView} className="text-lg font-light italic leading-relaxed" style={{ color: "#5b4a35" }}>
-                  {p}
-                </motion.p>
+        <section id="story" className="px-6 py-24" style={{ background: "#f3ead6" }}>
+          <div className="mx-auto max-w-5xl">
+            <Title kicker="How it began" title="Our Story" />
+            <div className="space-y-16">
+              {site.story.map((para, i) => (
+                <div key={i} className={`flex flex-col items-center gap-8 md:flex-row ${i % 2 ? "md:flex-row-reverse" : ""}`}>
+                  <motion.div {...reveal} className="w-full md:w-1/2">
+                    <Photo src={site.photos.story[i]} alt="" sizes="(min-width:768px) 45vw, 90vw" className="aspect-[4/5] w-full rounded-2xl shadow-[0_16px_40px_rgba(120,90,40,0.14)]" />
+                  </motion.div>
+                  <motion.div {...reveal} className="w-full md:w-1/2 text-center md:text-left">
+                    <p className="text-lg font-light italic leading-relaxed" style={{ color: "#5b4a35" }}>{para}</p>
+                  </motion.div>
+                </div>
               ))}
             </div>
           </div>
@@ -243,35 +252,18 @@ export default function Website() {
       )}
 
       {/* ═ DETAILS ═ */}
-      <section id="details" className="px-6 py-24" style={{ background: "#f3ead6" }}>
+      <section id="details" className="px-6 py-24" style={{ background: "#faf5ea" }}>
         <div className="mx-auto max-w-4xl">
-          <SectionTitle kicker="When &amp; where" title="The Details" />
+          <Title kicker="When &amp; where" title="The Details" />
           <div className="grid gap-6 md:grid-cols-2">
             {[site.ceremony, site.reception].map((b) => (
-              <motion.div
-                key={b.title}
-                {...inView}
-                className="rounded-2xl px-8 py-10 text-center"
-                style={{ background: "#fdfaf2", border: "1px solid rgba(169,138,82,0.25)", boxShadow: "0 10px 30px rgba(120,90,40,0.06)" }}
-              >
-                <p className="text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.35em", color: "#a98a52" }}>
-                  {b.title}
-                </p>
-                <h3 className="mt-4 text-2xl italic" style={{ color: "#463726" }}>
-                  {b.venue}
-                </h3>
-                {b.address.map((l) => (
-                  <p key={l} className="mt-1 text-sm font-light italic" style={{ color: "#6b5d4f" }}>
-                    {l}
-                  </p>
-                ))}
-                <p className="mt-4 text-[12px] font-light uppercase" style={{ ...sans, letterSpacing: "0.28em", color: "#8f7340" }}>
-                  {b.time}
-                </p>
+              <motion.div key={b.title} {...reveal} className="rounded-2xl px-8 py-10 text-center" style={{ background: "#fdfaf2", border: "1px solid rgba(169,138,82,0.25)", boxShadow: "0 12px 34px rgba(120,90,40,0.07)" }}>
+                <p className="text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.35em", color: "#a98a52" }}>{b.title}</p>
+                <h3 className="mt-4 text-2xl italic" style={{ color: "#463726" }}>{b.venue}</h3>
+                {b.address.map((l) => <p key={l} className="mt-1 text-sm font-light italic" style={{ color: "#6b5d4f" }}>{l}</p>)}
+                <p className="mt-4 text-[12px] font-light uppercase" style={{ ...sans, letterSpacing: "0.28em", color: "#8f7340" }}>{b.time}</p>
                 {site.mapsUrl && (
-                  <a href={site.mapsUrl} target="_blank" rel="noopener noreferrer" className="mt-5 inline-block text-[11px] font-light uppercase underline underline-offset-4" style={{ ...sans, letterSpacing: "0.2em", color: "#a98a52" }}>
-                    View map
-                  </a>
+                  <a href={site.mapsUrl} target="_blank" rel="noopener noreferrer" className="mt-5 inline-block text-[11px] font-light uppercase underline underline-offset-4" style={{ ...sans, letterSpacing: "0.2em", color: "#a98a52" }}>View map</a>
                 )}
               </motion.div>
             ))}
@@ -281,21 +273,39 @@ export default function Website() {
 
       {/* ═ SCHEDULE ═ */}
       {site.timeline.length > 0 && (
-        <section id="schedule" className="px-6 py-24" style={{ background: "#faf5ea" }}>
+        <section id="schedule" className="px-6 py-24" style={{ background: "#f3ead6" }}>
           <div className="mx-auto max-w-xl">
-            <SectionTitle kicker="The order of the day" title="Schedule" />
+            <Title kicker="The order of the day" title="Schedule" />
             <div className="relative mx-auto max-w-sm">
               <div className="absolute bottom-2 left-[7px] top-2 w-px" style={{ background: "rgba(169,138,82,0.35)" }} aria-hidden />
               {site.timeline.map((s) => (
-                <motion.div key={s.what} {...inView} className="relative mb-8 pl-10 last:mb-0 text-left">
-                  <span className="absolute left-0 top-1.5 h-4 w-4 rounded-full" style={{ background: "#faf5ea", border: "2px solid #a98a52" }} aria-hidden />
-                  <p className="text-[12px] font-light uppercase" style={{ ...sans, letterSpacing: "0.25em", color: "#8f7340" }}>
-                    {s.time}
-                  </p>
-                  <p className="mt-1 text-xl italic" style={{ color: "#463726" }}>
-                    {s.what}
-                  </p>
+                <motion.div key={s.what} {...reveal} className="relative mb-8 pl-10 text-left last:mb-0">
+                  <span className="absolute left-0 top-1.5 h-4 w-4 rounded-full" style={{ background: "#f3ead6", border: "2px solid #a98a52" }} aria-hidden />
+                  <p className="text-[12px] font-light uppercase" style={{ ...sans, letterSpacing: "0.25em", color: "#8f7340" }}>{s.time}</p>
+                  <p className="mt-1 text-xl italic" style={{ color: "#463726" }}>{s.what}</p>
                 </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ═ GALLERY ═ */}
+      {site.photos.gallery.length > 0 && (
+        <section id="gallery" className="px-6 py-24" style={{ background: "#faf5ea" }}>
+          <div className="mx-auto max-w-5xl">
+            <Title kicker="Moments" title="Gallery" />
+            <div className="columns-2 gap-3 sm:columns-3 [&>*]:mb-3">
+              {site.photos.gallery.map((src, i) => (
+                <motion.button
+                  key={src + i}
+                  {...reveal}
+                  onClick={() => setLightbox(src)}
+                  className="block w-full overflow-hidden rounded-xl"
+                  style={{ aspectRatio: i % 3 === 1 ? "3 / 4" : "1 / 1" }}
+                >
+                  <Photo src={src} alt="" sizes="(min-width:640px) 30vw, 45vw" className="h-full w-full transition-transform duration-500 hover:scale-105" monogram={false} />
+                </motion.button>
               ))}
             </div>
           </div>
@@ -305,11 +315,9 @@ export default function Website() {
       {/* ═ DRESS CODE ═ */}
       <section className="px-6 py-24 text-center" style={{ background: "#f3ead6" }}>
         <div className="mx-auto max-w-2xl">
-          <SectionTitle kicker="What to wear" title="Dress Code" />
-          <motion.p {...inView} className="text-2xl italic" style={{ color: "#463726" }}>
-            {site.dressCode}
-          </motion.p>
-          <motion.div {...inView} className="mt-8 flex items-center justify-center gap-5">
+          <Title kicker="What to wear" title="Dress Code" />
+          <motion.p {...reveal} className="text-2xl italic" style={{ color: "#463726" }}>{site.dressCode}</motion.p>
+          <motion.div {...reveal} className="mt-8 flex items-center justify-center gap-5">
             {[{ c: "#e8dcc0", label: "Ivory" }, { c: "#d9b975", label: "Champagne" }, { c: "#a98a52", label: "Gold" }].map((s) => (
               <div key={s.label} className="flex flex-col items-center gap-2">
                 <div className="h-12 w-12 rounded-full" style={{ background: s.c, boxShadow: "inset 0 2px 6px rgba(255,255,255,0.5), 0 2px 8px rgba(120,90,40,0.15)" }} />
@@ -317,68 +325,42 @@ export default function Website() {
               </div>
             ))}
           </motion.div>
-          {site.dressLadies && <motion.p {...inView} className="mt-8 text-sm font-light italic" style={{ color: "#6b5d4f" }}>Ladies — {site.dressLadies}</motion.p>}
-          {site.dressGentlemen && <motion.p {...inView} className="mt-2 text-sm font-light italic" style={{ color: "#6b5d4f" }}>Gentlemen — {site.dressGentlemen}</motion.p>}
+          {site.dressLadies && <motion.p {...reveal} className="mt-8 text-sm font-light italic" style={{ color: "#6b5d4f" }}>Ladies — {site.dressLadies}</motion.p>}
+          {site.dressGentlemen && <motion.p {...reveal} className="mt-2 text-sm font-light italic" style={{ color: "#6b5d4f" }}>Gentlemen — {site.dressGentlemen}</motion.p>}
         </div>
       </section>
 
-      {/* ═ GALLERY ═ */}
-      {site.gallery.length > 0 && (
-        <section id="gallery" className="px-6 py-24" style={{ background: "#faf5ea" }}>
-          <div className="mx-auto max-w-4xl">
-            <SectionTitle kicker="Moments" title="Gallery" />
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {site.gallery.map((src) => (
-                <motion.div key={src} {...inView} className="relative aspect-[3/4] overflow-hidden rounded-xl">
-                  <Image src={src} alt="" fill className="object-cover" sizes="(min-width:640px) 30vw, 45vw" />
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* ═ GIFTS ═ */}
       {site.giftNote && (
-        <section className="px-6 py-24 text-center" style={{ background: "#f3ead6" }}>
+        <section className="px-6 py-24 text-center" style={{ background: "#faf5ea" }}>
           <div className="mx-auto max-w-xl">
-            <SectionTitle kicker="With gratitude" title="Gifts" />
-            <motion.p {...inView} className="text-lg font-light italic leading-relaxed" style={{ color: "#5b4a35" }}>
-              {site.giftNote}
-            </motion.p>
-            {site.giftDetails && (
-              <motion.p {...inView} className="mt-5 text-[12px] font-light uppercase" style={{ ...sans, letterSpacing: "0.2em", color: "#8f7340" }}>
-                {site.giftDetails}
-              </motion.p>
-            )}
+            <Title kicker="With gratitude" title="Gifts" />
+            <motion.p {...reveal} className="text-lg font-light italic leading-relaxed" style={{ color: "#5b4a35" }}>{site.giftNote}</motion.p>
+            {site.giftDetails && <motion.p {...reveal} className="mt-5 text-[12px] font-light uppercase" style={{ ...sans, letterSpacing: "0.2em", color: "#8f7340" }}>{site.giftDetails}</motion.p>}
           </div>
         </section>
       )}
 
-      {/* ═ RSVP ═ */}
-      <section id="rsvp" className="px-6 py-28 text-center" style={{ background: "radial-gradient(120% 90% at 50% 0%, #fdf9ef 0%, #f0e4ca 100%)" }}>
-        <div className="mx-auto max-w-xl">
-          <SectionTitle kicker="Kindly reply" title="Will You Join Us?" />
-          <motion.p {...inView} className="text-lg font-light italic" style={{ color: "#6b5d4f" }}>
-            We would be honoured to have you celebrate with us.
-          </motion.p>
+      {/* ═ RSVP (full-bleed photo band) ═ */}
+      <section id="rsvp" className="relative overflow-hidden px-6 py-32 text-center">
+        <div className="absolute inset-0">
+          <Photo src={site.photos.rsvp} alt="" sizes="100vw" className="h-full w-full" monogram={!site.photos.rsvp} />
+        </div>
+        <div className="absolute inset-0" style={{ background: site.photos.rsvp ? "linear-gradient(180deg, rgba(30,22,10,0.62), rgba(30,22,10,0.72))" : "rgba(30,22,10,0.35)" }} />
+        <div className="relative mx-auto max-w-xl">
+          <Title kicker="Kindly reply" title="Will You Join Us?" light />
+          <motion.p {...reveal} className="text-lg font-light italic" style={{ color: "#fbf1da" }}>We would be honoured to celebrate this day with you.</motion.p>
           <motion.button
-            {...inView}
+            {...reveal}
             onClick={() => setRsvpOpen(true)}
             className="mt-10 inline-block rounded-full px-16 py-5 text-[12px] uppercase transition-transform active:scale-95"
-            style={{ ...sans, letterSpacing: "0.32em", color: "#f6efe1", background: "linear-gradient(180deg,#b7995c,#8f7340)", boxShadow: "0 8px 26px rgba(120,90,40,0.28)" }}
+            style={{ ...sans, letterSpacing: "0.32em", color: "#3a2c14", background: "linear-gradient(180deg,#f0dca6,#d9b975)", boxShadow: "0 10px 30px rgba(0,0,0,0.3)" }}
           >
             RSVP
           </motion.button>
-          {replied && (
-            <p className="mt-6 text-sm italic" style={{ color: "#8a7a63" }}>
-              You replied: {replied === "yes" ? "joyfully accepting" : "regretfully declining"}
-            </p>
-          )}
+          {replied && <p className="mt-6 text-sm italic" style={{ color: "#e7d4a6" }}>You replied: {replied === "yes" ? "joyfully accepting" : "regretfully declining"}</p>}
           <p className="mt-8">
-            <a href={waShare(site.blessingMessage)} target="_blank" rel="noopener noreferrer" className="text-[11px] font-light uppercase underline underline-offset-4" style={{ ...sans, letterSpacing: "0.22em", color: "#8f7340" }}>
-              Leave a blessing
-            </a>
+            <a href={waShare(site.blessingMessage)} target="_blank" rel="noopener noreferrer" className="text-[11px] font-light uppercase underline underline-offset-4" style={{ ...sans, letterSpacing: "0.22em", color: "#f0dca6" }}>Leave a blessing</a>
           </p>
         </div>
       </section>
@@ -387,21 +369,12 @@ export default function Website() {
       {site.faq.length > 0 && (
         <section id="faq" className="px-6 py-24" style={{ background: "#faf5ea" }}>
           <div className="mx-auto max-w-2xl">
-            <SectionTitle kicker="Good to know" title="Questions" />
+            <Title kicker="Good to know" title="Questions" />
             <div className="space-y-4">
               {site.faq.map((f) => (
-                <motion.details
-                  key={f.q}
-                  {...inView}
-                  className="group rounded-xl px-6 py-4"
-                  style={{ background: "#fdfaf2", border: "1px solid rgba(169,138,82,0.22)" }}
-                >
-                  <summary className="cursor-pointer list-none text-[15px] italic" style={{ color: "#463726" }}>
-                    {f.q}
-                  </summary>
-                  <p className="mt-3 text-sm font-light leading-relaxed" style={{ color: "#6b5d4f" }}>
-                    {f.a}
-                  </p>
+                <motion.details key={f.q} {...reveal} className="rounded-xl px-6 py-4" style={{ background: "#fdfaf2", border: "1px solid rgba(169,138,82,0.22)" }}>
+                  <summary className="cursor-pointer list-none text-[15px] italic" style={{ color: "#463726" }}>{f.q}</summary>
+                  <p className="mt-3 text-sm font-light leading-relaxed" style={{ color: "#6b5d4f" }}>{f.a}</p>
                 </motion.details>
               ))}
             </div>
@@ -410,24 +383,17 @@ export default function Website() {
       )}
 
       {/* ═ FOOTER ═ */}
-      <footer className="px-6 py-20 text-center" style={{ background: "#efe3c9" }}>
-        <p style={{ ...scriptFont, fontSize: 40, color: "#8f7340" }}>{site.coupleNames}</p>
-        <p className="mt-3 text-[12px] font-light uppercase" style={{ ...sans, letterSpacing: "0.3em", color: "#6b5d4f" }}>
-          {site.dateLine}
-        </p>
-        <p className="mt-6 text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.35em", color: "rgba(107,93,79,0.7)" }}>
-          {site.hashtag}
-        </p>
+      <footer className="px-6 py-20 text-center" style={{ background: "linear-gradient(180deg,#efe3c9,#e6d5b0)" }}>
+        <p style={{ ...scriptFont, fontSize: 44, color: "#8f7340" }}>{site.coupleNames}</p>
+        <p className="mt-3 text-[12px] font-light uppercase" style={{ ...sans, letterSpacing: "0.3em", color: "#6b5d4f" }}>{site.dateLine}</p>
+        <p className="mt-6 text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.35em", color: "rgba(107,93,79,0.7)" }}>{site.hashtag}</p>
+        {site.photographyCredit && (
+          <p className="mt-4 text-[9px] font-light uppercase" style={{ ...sans, letterSpacing: "0.3em", color: "rgba(107,93,79,0.55)" }}>Photography · {site.photographyCredit}</p>
+        )}
       </footer>
 
-      <RsvpModal
-        open={rsvpOpen}
-        onClose={() => setRsvpOpen(false)}
-        onChoose={(c) => {
-          setReplied(c);
-          localStorage.setItem("abims-rsvp", c);
-        }}
-      />
+      <RsvpModal open={rsvpOpen} onClose={() => setRsvpOpen(false)} onChoose={(c) => { setReplied(c); localStorage.setItem("abims-rsvp", c); }} />
+      <Lightbox src={lightbox} onClose={() => setLightbox(null)} />
     </div>
   );
 }

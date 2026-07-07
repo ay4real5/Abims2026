@@ -79,7 +79,6 @@ export default function RsvpModal({ open, onClose, onChoose }: Props) {
             phone: phone.trim(),
             attending: "Yes",
             guests,
-            autoresponse: `Dear ${name.trim()},\n\nThank you — your RSVP is confirmed! 🥂\n\nWe can't wait to celebrate with you on ${site.dateLine}.\n\nWith love,\n${site.coupleNames}\n${site.hashtag}`,
           }),
         });
         const data = await res.json().catch(() => null);
@@ -87,6 +86,24 @@ export default function RsvpModal({ open, onClose, onChoose }: Props) {
           setSubmitting(false);
           setError("Something went wrong sending your RSVP — please try again in a moment.");
           return;
+        }
+        if (site.emailjs.templateId) {
+          /* Guest confirmation email — best effort; the RSVP is already recorded above. */
+          fetch("https://api.emailjs.com/api/v1.0/email/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              service_id: site.emailjs.serviceId,
+              template_id: site.emailjs.templateId,
+              user_id: site.emailjs.publicKey,
+              template_params: {
+                name: name.trim(),
+                email: email.trim(),
+                phone: phone.trim() || "—",
+                guests,
+              },
+            }),
+          }).catch(() => {});
         }
       } catch {
         setSubmitting(false);

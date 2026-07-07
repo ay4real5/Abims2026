@@ -150,6 +150,13 @@ export const site = {
   /** Web3Forms access key — RSVPs are emailed to the address this key was created with. */
   rsvpAccessKey: "0cea8a4e-04bb-442b-b8ac-0b7b4a22e7ff",
 
+  /** EmailJS — sends the guest their confirmation email (Bcc keeps the admin copy). */
+  emailjs: {
+    serviceId: "service_wq7ms0e",
+    templateId: "template_xqrkr4p",
+    publicKey: "xi_qSKReYZ-rU3djz",
+  },
+
   /**
    * WhatsApp fallback. With a number ("2348012345678", no +) the buttons open
    * a chat; left "" they open WhatsApp's share sheet with the message.

@@ -80,6 +80,8 @@ export const site = {
     rsvp: "/photos/a3.jpg",
     /** Gallery grid. */
     gallery: ["/photos/a1.jpg", "/photos/a2.jpg", "/photos/a3.jpg", "/photos/a4.jpg", "/photos/a5.jpg", "/photos/a6.jpg"] as string[],
+    /** Optional poetic caption per gallery image (shown in the carousel). */
+    galleryCaptions: ["The Question", "Forever Begins", "With This Ring", "Sealed With a Kiss", "Just Engaged", "My Yes"] as string[],
   },
 
   /**

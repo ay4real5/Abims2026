@@ -24,6 +24,34 @@ function waShare(message: string) {
   return site.whatsappNumber ? `https://wa.me/${site.whatsappNumber}?text=${text}` : `https://wa.me/?text=${text}`;
 }
 
+/* ── ambient sparkles (subtle, for the countdown band) ───────── */
+const SPARKS = [
+  { x: 12, y: 30, d: 5, delay: 0 },
+  { x: 84, y: 22, d: 6, delay: 1.2 },
+  { x: 68, y: 62, d: 5.5, delay: 0.6 },
+  { x: 26, y: 70, d: 6.5, delay: 1.8 },
+  { x: 92, y: 48, d: 5, delay: 0.9 },
+  { x: 46, y: 18, d: 7, delay: 2.2 },
+  { x: 8, y: 55, d: 6, delay: 1.5 },
+];
+function Sparkles() {
+  const reduced = useReducedMotion();
+  if (reduced) return null;
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      {SPARKS.map((s, i) => (
+        <motion.span
+          key={i}
+          className="absolute rounded-full"
+          style={{ left: `${s.x}%`, top: `${s.y}%`, width: 4, height: 4, background: "#c8a25c", boxShadow: "0 0 8px 2px rgba(200,162,92,0.55)" }}
+          animate={{ opacity: [0, 0.9, 0], scale: [0.5, 1.1, 0.5], y: [0, -12, 0] }}
+          transition={{ duration: s.d, delay: s.delay, repeat: Infinity, ease: "easeInOut" }}
+        />
+      ))}
+    </div>
+  );
+}
+
 /* ── section heading ─────────────────────────────────────────── */
 function Title({ kicker, title, light }: { kicker: string; title: string; light?: boolean }) {
   return (
@@ -60,6 +88,7 @@ function Header() {
     ...(site.timeline.length ? [["schedule", "Schedule"]] : []),
     ...(site.photos.gallery.length ? [["gallery", "Gallery"]] : []),
     ...(site.faq.length ? [["faq", "FAQ"]] : []),
+    ["blessings", "Wishes"],
     ["rsvp", "RSVP"],
   ] as [string, string][];
 
@@ -162,12 +191,122 @@ function Lightbox({ src, onClose }: { src: string | null; onClose: () => void })
   );
 }
 
+/* ── gallery carousel (coverflow) ────────────────────────────── */
+function GalleryCarousel({ photos, captions, onOpen }: { photos: string[]; captions: string[]; onOpen: (s: string) => void }) {
+  const [i, setI] = useState(0);
+  const n = photos.length;
+  const go = (d: number) => setI((v) => (v + d + n) % n);
+  const prev = (i - 1 + n) % n;
+  const next = (i + 1) % n;
+  const Arrow = ({ dir, onClick }: { dir: "l" | "r"; onClick: () => void }) => (
+    <button
+      onClick={onClick}
+      aria-label={dir === "l" ? "Previous" : "Next"}
+      className="absolute top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full text-xl transition-transform active:scale-90"
+      style={{ [dir === "l" ? "left" : "right"]: 6, background: "rgba(250,245,234,0.92)", border: "1px solid rgba(169,138,82,0.4)", color: "#8f7340", boxShadow: "0 6px 18px rgba(120,90,40,0.15)" }}
+    >
+      {dir === "l" ? "‹" : "›"}
+    </button>
+  );
+  return (
+    <div className="relative mx-auto flex h-[64vh] max-h-[560px] max-w-lg items-center justify-center">
+      {/* side peeks */}
+      <div className="absolute left-0 h-[74%] w-[34%] overflow-hidden rounded-xl opacity-45" style={{ transform: "scale(0.9)" }}>
+        <Photo src={photos[prev]} alt="" className="h-full w-full" monogram={false} sizes="30vw" />
+      </div>
+      <div className="absolute right-0 h-[74%] w-[34%] overflow-hidden rounded-xl opacity-45" style={{ transform: "scale(0.9)" }}>
+        <Photo src={photos[next]} alt="" className="h-full w-full" monogram={false} sizes="30vw" />
+      </div>
+      {/* active card */}
+      <AnimatePresence mode="popLayout">
+        <motion.button
+          key={i}
+          onClick={() => onOpen(photos[i])}
+          className="relative z-10 h-full w-[68%] overflow-hidden rounded-2xl"
+          style={{ boxShadow: "0 20px 50px rgba(120,90,40,0.28)" }}
+          initial={{ opacity: 0, scale: 0.92 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.92 }}
+          transition={{ duration: 0.45, ease: EASE }}
+        >
+          <Photo src={photos[i]} alt="" quality={95} className="h-full w-full" monogram={false} sizes="70vw" />
+          <div className="absolute inset-x-0 bottom-0 h-1/3" style={{ background: "linear-gradient(180deg, transparent, rgba(24,16,6,0.75))" }} />
+          {captions[i] && (
+            <span className="absolute bottom-5 left-6 text-2xl italic" style={{ ...serif, color: "#fdf3de", textShadow: "0 1px 10px rgba(0,0,0,0.6)" }}>
+              {captions[i]}
+            </span>
+          )}
+        </motion.button>
+      </AnimatePresence>
+      <Arrow dir="l" onClick={() => go(-1)} />
+      <Arrow dir="r" onClick={() => go(1)} />
+      {/* dots */}
+      <div className="absolute -bottom-8 left-1/2 flex -translate-x-1/2 gap-2">
+        {photos.map((_, d) => (
+          <span key={d} className="h-1.5 w-1.5 rounded-full transition-colors" style={{ background: d === i ? "#a98a52" : "rgba(169,138,82,0.3)" }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── blessings wall ──────────────────────────────────────────── */
+function BlessingWall() {
+  const [name, setName] = useState("");
+  const [msg, setMsg] = useState("");
+  const post = () => {
+    if (!msg.trim()) return;
+    const text = `${site.hashtag} — A blessing for ${site.coupleNames} from ${name.trim() || "a well-wisher"}: ${msg.trim()}`;
+    window.open(waShare(text), "_blank", "noopener,noreferrer");
+    setMsg("");
+    setName("");
+  };
+  const field = { ...sans, background: "#f6efe1", color: "#463726", border: "1px solid rgba(169,138,82,0.3)" } as const;
+  return (
+    <section id="blessings" className="px-6 py-24" style={{ background: "linear-gradient(180deg,#241a0e 0%,#191109 100%)" }}>
+      <div className="mx-auto max-w-lg text-center">
+        <p className="text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.45em", color: "#c8a25c" }}>Blessings Wall</p>
+        <h2 className="mt-3 text-4xl italic sm:text-5xl" style={{ ...serif, color: "#f6ead0" }}>Leave a Wish</h2>
+        <div className="mt-10 rounded-2xl p-5 text-left" style={{ background: "rgba(255,250,238,0.04)", border: "1px solid rgba(169,138,82,0.25)" }}>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Your name"
+            className="w-full rounded-lg px-4 py-3.5 text-[15px] outline-none"
+            style={field}
+          />
+          <textarea
+            value={msg}
+            onChange={(e) => setMsg(e.target.value)}
+            placeholder={`Your blessing for ${site.coupleNames}`}
+            rows={4}
+            className="mt-3 w-full resize-none rounded-lg px-4 py-3.5 text-[15px] outline-none"
+            style={field}
+          />
+          <button
+            onClick={post}
+            className="mt-3 w-full rounded-lg py-3.5 text-[12px] uppercase transition-transform active:scale-[0.98]"
+            style={{ ...sans, letterSpacing: "0.3em", color: "#f6ead0", background: "transparent", border: "1px solid rgba(200,162,92,0.7)" }}
+          >
+            Post blessing
+          </button>
+        </div>
+        <p className="mt-4 text-[11px] font-light italic" style={{ ...serif, color: "rgba(246,234,208,0.6)" }}>
+          Your wish opens WhatsApp to send straight to the couple.
+        </p>
+      </div>
+    </section>
+  );
+}
+
 /* ── the website ─────────────────────────────────────────────── */
 export default function Website() {
   const reduced = useReducedMotion();
   const [rsvpOpen, setRsvpOpen] = useState(false);
   const [replied, setReplied] = useState<RsvpChoice | null>(null);
   const [lightbox, setLightbox] = useState<string | null>(null);
+  const [galleryView, setGalleryView] = useState<"grid" | "carousel">("grid");
+  const [giftsOpen, setGiftsOpen] = useState(false);
 
   useEffect(() => {
     const s = localStorage.getItem("abims-rsvp");
@@ -213,15 +352,32 @@ export default function Website() {
         </motion.a>
       </section>
 
-      {/* ═ INVITATION LINE ═ */}
-      <section id="invite" className="px-6 py-24 text-center" style={{ background: "#faf5ea" }}>
-        <motion.div {...reveal} className="mx-auto max-w-xl">
+      {/* ═ INVITATION + COUNTDOWN ═ */}
+      <section id="invite" className="relative overflow-hidden px-6 py-24 text-center" style={{ background: "radial-gradient(120% 80% at 50% 0%, #fdf9ef 0%, #f4ead4 100%)" }}>
+        <Sparkles />
+        <motion.div {...reveal} className="relative mx-auto max-w-xl">
           <p className="mx-auto text-3xl italic" style={{ ...scriptFont, color: "#8f7340" }}>{site.initials[0]} &amp; {site.initials[1]}</p>
           <p className="mt-8 text-xl font-light italic leading-relaxed" style={{ color: "#5b4a35" }}>
             Together with their families, they joyfully invite you to celebrate their marriage.
           </p>
-          <div className="mt-12">
+
+          <p className="mt-10 text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.4em", color: "#a98a52" }}>Saturday</p>
+          <p className="mt-2 text-4xl italic" style={{ ...serif, color: "#463726" }}>15 August 2026</p>
+          <p className="mt-3 text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.18em", color: "#6b5d4f" }}>
+            {site.ceremony.time} · Church &nbsp;|&nbsp; {site.reception.time} · Reception
+          </p>
+
+          <div className="mt-10">
             <Countdown />
+          </div>
+
+          <div className="mt-12 flex flex-col items-center gap-4">
+            <a href="#rsvp" className="inline-block rounded-full px-14 py-4 text-[12px] uppercase transition-transform active:scale-95" style={{ ...sans, letterSpacing: "0.3em", color: "#f6efe1", background: "linear-gradient(180deg,#b7995c,#8f7340)", boxShadow: "0 8px 24px rgba(120,90,40,0.25)" }}>
+              RSVP now
+            </a>
+            <a href="#details" className="text-[11px] font-light uppercase underline underline-offset-4" style={{ ...sans, letterSpacing: "0.25em", color: "#8f7340" }}>
+              View venues
+            </a>
           </div>
         </motion.div>
       </section>
@@ -293,21 +449,44 @@ export default function Website() {
       {site.photos.gallery.length > 0 && (
         <section id="gallery" className="px-6 py-24" style={{ background: "#faf5ea" }}>
           <div className="mx-auto max-w-5xl">
-            <Title kicker="Moments" title="Gallery" />
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
-              {site.photos.gallery.map((src, i) => (
-                <motion.button
-                  key={src + i}
-                  {...reveal}
-                  onClick={() => setLightbox(src)}
-                  className="group relative block aspect-[4/5] w-full overflow-hidden rounded-xl"
-                  style={{ boxShadow: "0 10px 26px rgba(120,90,40,0.12)" }}
+            <Title kicker="Memories" title="A Living Gallery" />
+
+            {/* grid / carousel toggle */}
+            <div className="mb-12 flex items-center justify-center gap-3">
+              {(["grid", "carousel"] as const).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setGalleryView(v)}
+                  className="rounded-full px-6 py-2.5 text-[11px] uppercase transition-all"
+                  style={
+                    galleryView === v
+                      ? { ...sans, letterSpacing: "0.22em", color: "#f6efe1", background: "linear-gradient(180deg,#b7995c,#8f7340)" }
+                      : { ...sans, letterSpacing: "0.22em", color: "#8f7340", border: "1px solid rgba(169,138,82,0.4)" }
+                  }
                 >
-                  <Photo src={src} alt="" quality={95} sizes="(min-width:640px) 30vw, 48vw" className="h-full w-full transition-transform duration-700 group-hover:scale-[1.06]" monogram={false} />
-                  <span className="pointer-events-none absolute inset-0 rounded-xl" style={{ border: "1px solid rgba(255,248,230,0.15)", boxShadow: "inset 0 0 0 1px rgba(143,115,64,0.12)" }} />
-                </motion.button>
+                  {v}
+                </button>
               ))}
             </div>
+
+            {galleryView === "grid" ? (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+                {site.photos.gallery.map((src, i) => (
+                  <motion.button
+                    key={src + i}
+                    {...reveal}
+                    onClick={() => setLightbox(src)}
+                    className="group relative block aspect-[4/5] w-full overflow-hidden rounded-xl"
+                    style={{ boxShadow: "0 10px 26px rgba(120,90,40,0.12)" }}
+                  >
+                    <Photo src={src} alt="" quality={95} sizes="(min-width:640px) 30vw, 48vw" className="h-full w-full transition-transform duration-700 group-hover:scale-[1.06]" monogram={false} />
+                    <span className="pointer-events-none absolute inset-0 rounded-xl" style={{ boxShadow: "inset 0 0 0 1px rgba(143,115,64,0.14)" }} />
+                  </motion.button>
+                ))}
+              </div>
+            ) : (
+              <GalleryCarousel photos={site.photos.gallery} captions={site.photos.galleryCaptions} onOpen={setLightbox} />
+            )}
           </div>
         </section>
       )}
@@ -332,14 +511,34 @@ export default function Website() {
 
       {/* ═ GIFTS ═ */}
       {site.giftNote && (
-        <section className="px-6 py-24 text-center" style={{ background: "#faf5ea" }}>
+        <section className="px-6 py-24 text-center" style={{ background: "linear-gradient(180deg,#f4ead4,#efe3c9)" }}>
           <div className="mx-auto max-w-xl">
-            <Title kicker="With gratitude" title="Gifts" />
-            <motion.p {...reveal} className="text-lg font-light italic leading-relaxed" style={{ color: "#5b4a35" }}>{site.giftNote}</motion.p>
-            {site.giftDetails && <motion.p {...reveal} className="mt-5 text-[12px] font-light uppercase" style={{ ...sans, letterSpacing: "0.2em", color: "#8f7340" }}>{site.giftDetails}</motion.p>}
+            <p className="text-2xl" style={{ ...scriptFont, color: "#a98a52" }}>&amp; &#10047;</p>
+            <h2 className="mt-4 text-4xl italic" style={{ ...serif, color: "#463726" }}>Gifts</h2>
+            <motion.p {...reveal} className="mt-8 text-lg font-light italic leading-relaxed" style={{ color: "#5b4a35" }}>{site.giftNote}</motion.p>
+            {site.giftDetails && (
+              <motion.button {...reveal} onClick={() => setGiftsOpen(true)} className="mt-10 inline-block rounded-full px-14 py-4 text-[12px] uppercase transition-transform active:scale-95" style={{ ...sans, letterSpacing: "0.3em", color: "#f6efe1", background: "linear-gradient(180deg,#b7995c,#8f7340)", boxShadow: "0 8px 24px rgba(120,90,40,0.22)" }}>
+                View gift details
+              </motion.button>
+            )}
           </div>
         </section>
       )}
+
+      {/* Gifts modal */}
+      <AnimatePresence>
+        {giftsOpen && (
+          <motion.div className="fixed inset-0 z-[85] flex items-center justify-center px-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <button aria-label="Close" className="absolute inset-0" style={{ background: "rgba(30,22,10,0.55)", backdropFilter: "blur(6px)" }} onClick={() => setGiftsOpen(false)} />
+            <motion.div className="relative w-full max-w-sm rounded-2xl px-8 py-10 text-center" style={{ background: "linear-gradient(178deg,#faf5ea,#f1e7d0)" }} initial={{ scale: 0.95, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 12 }} transition={{ duration: 0.4, ease: EASE }}>
+              <p className="text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.35em", color: "#a98a52" }}>With gratitude</p>
+              <h3 className="mt-3 text-2xl italic" style={{ ...serif, color: "#463726" }}>Gift Details</h3>
+              <p className="mt-6 whitespace-pre-line text-base italic leading-relaxed" style={{ ...serif, color: "#5b4a35" }}>{site.giftDetails}</p>
+              <button onClick={() => setGiftsOpen(false)} className="mt-8 text-[10px] font-light uppercase underline underline-offset-4" style={{ ...sans, letterSpacing: "0.3em", color: "#8a7a63" }}>Close</button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ═ RSVP (full-bleed photo band) ═ */}
       <section id="rsvp" className="relative overflow-hidden px-6 py-32 text-center">
@@ -385,6 +584,9 @@ export default function Website() {
           </div>
         </section>
       )}
+
+      {/* ═ BLESSINGS WALL ═ */}
+      <BlessingWall />
 
       {/* ═ FOOTER ═ */}
       <footer className="px-6 py-20 text-center" style={{ background: "linear-gradient(180deg,#efe3c9,#e6d5b0)" }}>

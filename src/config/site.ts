@@ -82,12 +82,12 @@ export const site = {
     note: "A short journey from the ceremony to the celebration.",
   },
 
-  dressCode: "Champagne gold & ivory",
+  dressCode: "Champagne gold, ivory & olive green",
   /** One line of guidance shown under the two colour swatches. */
-  dressNote: "Ladies & gentlemen — dress elegantly, with a touch of champagne gold or ivory.",
+  dressNote: "Ladies & gentlemen — dress elegantly, with a touch of champagne gold, ivory or olive green.",
   /** Tailored guidance shown beside the ♀ / ♂ symbols. Leave "" to hide a column. */
-  dressHer: "Flowing gowns in ivory or champagne gold — graceful, and effortlessly timeless.",
-  dressHim: "Sharp suits in cream, tan, navy or black, finished with a touch of champagne gold.",
+  dressHer: "Flowing gowns in ivory, champagne gold or olive green — graceful, and effortlessly timeless.",
+  dressHim: "Sharp suits in cream, tan, olive or black, finished with a touch of champagne gold.",
 
   /**
    * The order of the day. `time` is optional — leave it "" and only the moment

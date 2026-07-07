@@ -780,7 +780,7 @@ export default function Website() {
           <Title kicker="What to wear" title="Dress Code" />
           <motion.p {...reveal} className="text-2xl italic" style={{ color: "#463726" }}>{site.dressCode}</motion.p>
           <motion.div {...reveal} className="mt-8 flex items-center justify-center gap-8">
-            {[{ c: "#e8dcc0", label: "Ivory" }, { c: "#cdb06a", label: "Champagne Gold" }].map((s) => (
+            {[{ c: "#e8dcc0", label: "Ivory" }, { c: "#cdb06a", label: "Champagne Gold" }, { c: "#8a9a5b", label: "Olive Green" }].map((s) => (
               <div key={s.label} className="flex flex-col items-center gap-2">
                 <div className="h-14 w-14 rounded-full" style={{ background: s.c, boxShadow: "inset 0 2px 6px rgba(255,255,255,0.5), 0 2px 8px rgba(120,90,40,0.15)" }} />
                 <span className="text-[9px] font-light uppercase" style={{ ...sans, letterSpacing: "0.2em", color: "#8a7a63" }}>{s.label}</span>

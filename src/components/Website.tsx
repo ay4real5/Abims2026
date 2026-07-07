@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { site } from "@/config/site";
 import Photo from "./Photo";
+import OurStory from "./OurStory";
 import RsvpModal, { type RsvpChoice } from "./RsvpModal";
 
 const serif = { fontFamily: "var(--font-serif)" };
@@ -34,6 +35,14 @@ const SPARKS = [
   { x: 46, y: 18, d: 7, delay: 2.2 },
   { x: 8, y: 55, d: 6, delay: 1.5 },
 ];
+/* drifting golden light for the hero */
+const HERO_LIGHTS = [
+  { x: 16, y: 30, s: 130, dx: 40, dy: -26, d: 15, delay: 0 },
+  { x: 74, y: 22, s: 170, dx: -34, dy: 30, d: 19, delay: 2 },
+  { x: 52, y: 58, s: 110, dx: 26, dy: 22, d: 17, delay: 1 },
+  { x: 86, y: 64, s: 90, dx: -22, dy: -18, d: 21, delay: 3.5 },
+];
+
 function Sparkles() {
   const reduced = useReducedMotion();
   if (reduced) return null;
@@ -403,6 +412,103 @@ function BlessingWall() {
   );
 }
 
+/* ── venue line-art icons (replace the emoji, on-brand gold) ───── */
+function VenueIcon({ kind }: { kind?: string }) {
+  const common = { width: 40, height: 40, viewBox: "0 0 48 48", fill: "none", stroke: "#a98a52", strokeWidth: 1.5, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  if (kind === "church") {
+    return (
+      <svg {...common} aria-hidden>
+        <path d="M24 4v6M21.5 6.5h5" />
+        <path d="M15 19 24 10l9 9" />
+        <path d="M17 19v23h14V19" />
+        <path d="M22 42v-8a2 2 0 0 1 4 0v8" />
+        <path d="M13 42h22" />
+      </svg>
+    );
+  }
+  if (kind === "toast") {
+    return (
+      <svg {...common} aria-hidden>
+        <g transform="translate(20 12) rotate(-14)">
+          <path d="M-4 0H4L2 9a2 2 0 0 1-4 0Z" />
+          <path d="M0 10v9M-4 19H4" />
+        </g>
+        <g transform="translate(28 12) rotate(14)">
+          <path d="M-4 0H4L2 9a2 2 0 0 1-4 0Z" />
+          <path d="M0 10v9M-4 19H4" />
+        </g>
+        <path d="M24 4.5l.7 1.7 1.8.3-1.3 1.3.3 1.8-1.5-.9-1.5.9.3-1.8-1.3-1.3 1.8-.3z" fill="#a98a52" stroke="none" />
+      </svg>
+    );
+  }
+  return null;
+}
+
+/* ── the journey between the two venues ──────────────────────── */
+function PinIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8f7340" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" />
+      <circle cx="12" cy="10" r="2.4" />
+    </svg>
+  );
+}
+
+function VenueJourney() {
+  const t = site.travel;
+  if (!t || (!t.note && !t.from && !t.to)) return null;
+  return (
+    <motion.div {...reveal} className="mx-auto mt-12 max-w-md">
+      <div className="flex items-center gap-4">
+        <div className="flex flex-col items-center gap-1.5">
+          <PinIcon />
+          <span className="text-[10px] uppercase" style={{ ...sans, letterSpacing: "0.2em", color: "#8f7340" }}>{t.from}</span>
+        </div>
+        <div className="relative flex-1">
+          <div className="h-px w-full" style={{ backgroundImage: "linear-gradient(90deg, rgba(169,138,82,0.7) 45%, transparent 0)", backgroundSize: "9px 1px", backgroundRepeat: "repeat-x" }} />
+          {t.duration && (
+            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full px-3 py-1 text-[10px] uppercase" style={{ ...sans, letterSpacing: "0.16em", color: "#8f7340", background: "#faf5ea", border: "1px solid rgba(169,138,82,0.4)" }}>{t.duration}</span>
+          )}
+        </div>
+        <div className="flex flex-col items-center gap-1.5">
+          <PinIcon />
+          <span className="text-[10px] uppercase" style={{ ...sans, letterSpacing: "0.2em", color: "#8f7340" }}>{t.to}</span>
+        </div>
+      </div>
+      {t.note && <p className="mt-4 text-center text-[13px] font-light italic" style={{ color: "#8a7a63" }}>{t.note}</p>}
+    </motion.div>
+  );
+}
+
+/* ── add-to-calendar (.ics download, no dependency) ──────────── */
+function icsStamp(iso: string) {
+  return new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+}
+function addToCalendar(v: { title: string; venue: string; address: string[]; startISO?: string }) {
+  if (!v.startISO) return;
+  const start = icsStamp(v.startISO);
+  const end = icsStamp(new Date(new Date(v.startISO).getTime() + 2 * 3600 * 1000).toISOString());
+  const loc = [v.venue, ...v.address].join(", ");
+  const ics = [
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Abims2026//Wedding//EN", "CALSCALE:GREGORIAN", "BEGIN:VEVENT",
+    `UID:${v.title.replace(/\s+/g, "")}-${start}@abims2026`,
+    `DTSTAMP:${icsStamp(new Date().toISOString())}`,
+    `DTSTART:${start}`, `DTEND:${end}`,
+    `SUMMARY:${site.coupleNames} — ${v.title}`,
+    `LOCATION:${loc}`,
+    `DESCRIPTION:${site.coupleNames} wedding · ${v.title}`,
+    "END:VEVENT", "END:VCALENDAR",
+  ].join("\r\n");
+  const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${site.hashtag.replace(/#/, "")}-${v.title.replace(/\s+/g, "-")}.ics`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 /* ── the website ─────────────────────────────────────────────── */
 export default function Website() {
   const reduced = useReducedMotion();
@@ -416,41 +522,102 @@ export default function Website() {
     if (s === "yes" || s === "no") setReplied(s);
   }, []);
 
+  // hero parallax off the viewport scroll (no target ref → no hydration race):
+  // the first screen-height of scrolling drives the drift/fade.
+  const [vh, setVh] = useState(800);
+  useEffect(() => {
+    const f = () => setVh(window.innerHeight || 800);
+    f();
+    window.addEventListener("resize", f);
+    return () => window.removeEventListener("resize", f);
+  }, []);
+  const { scrollY } = useScroll();
+  const photoY = useTransform(scrollY, [0, vh], ["0%", "16%"]);
+  const contentY = useTransform(scrollY, [0, vh], ["0%", "36%"]);
+  const contentFade = useTransform(scrollY, [0, vh * 0.8], [1, 0]);
+
   return (
     <div id="top" style={{ background: "#faf5ea", color: "#4a3d2c", ...serif }}>
       <Header />
 
       {/* ═ HERO ═ */}
       <section className="relative flex h-[100dvh] items-end justify-center overflow-hidden pb-[13dvh] text-center">
-        <motion.div
-          className="absolute inset-0"
-          animate={reduced ? undefined : { scale: [1, 1.07] }}
-          transition={{ duration: 24, ease: "easeOut", repeat: Infinity, repeatType: "reverse" }}
-        >
-          <Photo src={site.photos.hero} alt={site.coupleNames} priority quality={95} sizes="100vw" className="h-full w-full" monogram={!site.photos.hero} position="center 38%" />
+        {/* photo — parallax drift + slow ken-burns */}
+        <motion.div className="absolute inset-0" style={{ y: reduced ? 0 : photoY }}>
+          <motion.div
+            className="absolute inset-0"
+            animate={reduced ? undefined : { scale: [1, 1.08] }}
+            transition={{ duration: 24, ease: "easeOut", repeat: Infinity, repeatType: "reverse" }}
+          >
+            <Photo src={site.photos.hero} alt={site.coupleNames} priority quality={95} sizes="100vw" className="h-full w-full" monogram={!site.photos.hero} position="center 38%" />
+          </motion.div>
         </motion.div>
-        {/* cinematic scrim — light at top so faces read, deep at the base for the type */}
-        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(24,16,6,0.32) 0%, rgba(24,16,6,0.04) 26%, rgba(24,16,6,0.16) 52%, rgba(24,16,6,0.7) 82%, rgba(24,16,6,0.9) 100%)" }} />
 
-        <motion.div className="relative px-6" initial={{ y: 20, opacity: 0.001 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 1.2, ease: EASE }}>
-          <p className="text-[10px] font-light uppercase sm:text-[11px]" style={{ ...sans, letterSpacing: "0.55em", color: "#eecf8f", textShadow: "0 1px 12px rgba(0,0,0,0.7)" }}>
+        {/* cinematic scrim — light at top so faces read, deep at the base for the type */}
+        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(24,16,6,0.32) 0%, rgba(24,16,6,0.04) 26%, rgba(24,16,6,0.16) 52%, rgba(24,16,6,0.7) 82%, rgba(24,16,6,0.92) 100%)" }} />
+
+        {/* drifting golden light */}
+        {!reduced && (
+          <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden" style={{ mixBlendMode: "screen" }}>
+            {HERO_LIGHTS.map((l, i) => (
+              <motion.span
+                key={i}
+                className="absolute rounded-full"
+                style={{ left: `${l.x}%`, top: `${l.y}%`, width: l.s, height: l.s, background: "radial-gradient(circle, rgba(255,226,158,0.5), rgba(255,226,158,0) 70%)", filter: "blur(4px)" }}
+                animate={{ x: [0, l.dx, 0], y: [0, l.dy, 0], opacity: [0.14, 0.5, 0.14] }}
+                transition={{ duration: l.d, repeat: Infinity, ease: "easeInOut", delay: l.delay }}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* title block — parallax + fade on scroll */}
+        <motion.div className="relative px-6" style={{ y: reduced ? 0 : contentY, opacity: reduced ? 1 : contentFade }}>
+          <motion.p
+            className="text-[10px] font-light uppercase sm:text-[11px]"
+            style={{ ...sans, letterSpacing: "0.55em", color: "#eecf8f", textShadow: "0 1px 12px rgba(0,0,0,0.7)" }}
+            initial={reduced ? undefined : { opacity: 0, y: 12 }}
+            animate={reduced ? undefined : { opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.15 }}
+          >
             We&apos;re getting married
-          </p>
-          <h1 className="mx-auto mt-5 max-w-[94vw] break-words leading-[1.06]" style={{ ...scriptFont, fontSize: "clamp(44px, 10vw, 112px)", color: "#fefaf0", textShadow: "0 3px 28px rgba(0,0,0,0.7), 0 0 70px rgba(0,0,0,0.4)" }}>
+          </motion.p>
+
+          {/* names — written on, left to right, like a signature */}
+          <motion.h1
+            className="mx-auto mt-5 max-w-[94vw] break-words leading-[1.06]"
+            style={{ ...scriptFont, fontSize: "clamp(44px, 10vw, 112px)", color: "#fefaf0", textShadow: "0 3px 28px rgba(0,0,0,0.7), 0 0 70px rgba(0,0,0,0.4)" }}
+            initial={reduced ? undefined : { clipPath: "inset(0 100% 0 0)", opacity: 0 }}
+            animate={reduced ? undefined : { clipPath: "inset(0 0% 0 0)", opacity: 1 }}
+            transition={{ clipPath: { duration: 1.9, ease: [0.7, 0, 0.2, 1], delay: 0.4 }, opacity: { duration: 0.5, delay: 0.4 } }}
+          >
             {site.coupleNames}
-          </h1>
-          <div className="mx-auto mt-5 flex w-44 items-center gap-3">
+          </motion.h1>
+
+          <motion.div
+            className="mx-auto mt-6 flex w-44 items-center gap-3"
+            initial={reduced ? undefined : { opacity: 0 }}
+            animate={reduced ? undefined : { opacity: 1 }}
+            transition={{ duration: 1, delay: 1.9 }}
+          >
             <div className="h-px flex-1" style={{ background: "linear-gradient(90deg,transparent,rgba(238,207,143,0.85))" }} />
             <span style={{ color: "#eecf8f" }}>&#10022;</span>
             <div className="h-px flex-1" style={{ background: "linear-gradient(270deg,transparent,rgba(238,207,143,0.85))" }} />
-          </div>
-          <p className="mt-5 text-lg italic sm:text-xl" style={{ color: "#fdf3de", textShadow: "0 1px 14px rgba(0,0,0,0.7)" }}>
-            {site.dateWords}
-          </p>
+          </motion.div>
+
+          <motion.p
+            className="mt-5 text-[11px] font-light uppercase sm:text-xs"
+            style={{ ...sans, letterSpacing: "0.42em", color: "#f4e4c4", textShadow: "0 1px 14px rgba(0,0,0,0.75)" }}
+            initial={reduced ? undefined : { opacity: 0 }}
+            animate={reduced ? undefined : { opacity: 1 }}
+            transition={{ duration: 1, delay: 2.15 }}
+          >
+            {site.place}
+          </motion.p>
         </motion.div>
 
         {/* scroll cue */}
-        <motion.a href="#invite" className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.6, duration: 1 }}>
+        <motion.a href="#invite" className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2.4, duration: 1 }}>
           <motion.span className="block text-lg" style={{ color: "#eecf8f" }} animate={reduced ? undefined : { y: [0, 7, 0] }} transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}>⌄</motion.span>
         </motion.a>
       </section>
@@ -475,44 +642,49 @@ export default function Website() {
           </div>
 
           <div id="rsvp" className="mt-12 flex scroll-mt-24 flex-col items-center gap-4">
-            <button onClick={() => setRsvpOpen(true)} className="inline-block rounded-full px-14 py-4 text-[12px] uppercase transition-transform active:scale-95" style={{ ...sans, letterSpacing: "0.3em", color: "#f6efe1", background: "linear-gradient(180deg,#b7995c,#8f7340)", boxShadow: "0 8px 24px rgba(120,90,40,0.25)" }}>
-              RSVP now
-            </button>
-            {replied && (
+            <p className="text-lg italic" style={{ ...serif, color: "#5b4a35" }}>
+              {replied ? "Thank you for letting us know." : "Will you be joining us?"}
+            </p>
+
+            {/* attention pulse behind the button so it clearly reads as tappable */}
+            <div className="relative">
+              {!replied && !reduced && (
+                <motion.span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 rounded-full"
+                  style={{ background: "linear-gradient(180deg,#b7995c,#8f7340)" }}
+                  animate={{ scale: [1, 1.18], opacity: [0.5, 0] }}
+                  transition={{ duration: 1.9, repeat: Infinity, ease: "easeOut" }}
+                />
+              )}
+              <button
+                onClick={() => setRsvpOpen(true)}
+                className="relative inline-block rounded-full px-14 py-4 text-[12px] uppercase transition-transform active:scale-95"
+                style={{ ...sans, letterSpacing: "0.3em", color: "#f6efe1", background: "linear-gradient(180deg,#b7995c,#8f7340)", boxShadow: "0 8px 24px rgba(120,90,40,0.25)" }}
+              >
+                {replied ? "Change my reply" : "RSVP now"}
+              </button>
+            </div>
+
+            {replied ? (
               <p className="text-sm italic" style={{ ...serif, color: "#8a7a63" }}>
                 You replied: {replied === "yes" ? "joyfully accepting" : "regretfully declining"}
               </p>
+            ) : (
+              <p className="text-[12px] font-light" style={{ ...sans, letterSpacing: "0.06em", color: "#8a7a63" }}>
+                Tap the button above to let us know
+              </p>
             )}
-            <a href="#details" className="text-[11px] font-light uppercase underline underline-offset-4" style={{ ...sans, letterSpacing: "0.25em", color: "#8f7340" }}>
+
+            <a href="#details" className="mt-2 text-[11px] font-light uppercase underline underline-offset-4" style={{ ...sans, letterSpacing: "0.25em", color: "#8f7340" }}>
               View venues
             </a>
           </div>
         </motion.div>
       </section>
 
-      {/* ═ OUR STORY (alternating photo / text) ═ */}
-      {site.story.length > 0 && (
-        <section id="story" className="px-6 py-24" style={{ background: "#f3ead6" }}>
-          <div className="mx-auto max-w-5xl">
-            <Title kicker="How it began" title="Our Story" />
-            <div className="space-y-16">
-              {site.story.map((para, i) => (
-                <div key={i} className={`flex flex-col items-center gap-8 md:flex-row ${i % 2 ? "md:flex-row-reverse" : ""}`}>
-                  <motion.div {...reveal} className="w-full md:w-1/2">
-                    <div className="relative">
-                      <Photo src={site.photos.story[i]} alt="" quality={95} sizes="(min-width:768px) 45vw, 90vw" className="aspect-[4/5] w-full rounded-2xl shadow-[0_18px_44px_rgba(120,90,40,0.16)]" />
-                      <span className="pointer-events-none absolute inset-0 rounded-2xl" style={{ boxShadow: "inset 0 0 0 1px rgba(143,115,64,0.18)" }} />
-                    </div>
-                  </motion.div>
-                  <motion.div {...reveal} className="w-full md:w-1/2 text-center md:text-left">
-                    <p className="text-lg font-light italic leading-relaxed" style={{ color: "#5b4a35" }}>{para}</p>
-                  </motion.div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      {/* ═ OUR STORY (scroll-driven chapters) ═ */}
+      <OurStory />
 
       {/* ═ DETAILS ═ */}
       <section id="details" className="px-6 py-24" style={{ background: "#faf5ea" }}>
@@ -521,17 +693,31 @@ export default function Website() {
           <div className="grid gap-6 md:grid-cols-2">
             {[site.ceremony, site.reception].map((b) => (
               <motion.div key={b.title} {...reveal} className="rounded-2xl px-8 py-10 text-center" style={{ background: "#fdfaf2", border: "1px solid rgba(169,138,82,0.25)", boxShadow: "0 12px 34px rgba(120,90,40,0.07)" }}>
-                {b.icon && <p className="text-3xl" aria-hidden>{b.icon}</p>}
-                <p className="mt-3 text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.35em", color: "#a98a52" }}>{b.title}</p>
+                <div className="flex justify-center">
+                  {VenueIcon({ kind: b.kind }) ?? (b.icon && <span className="text-3xl" aria-hidden>{b.icon}</span>)}
+                </div>
+                <p className="mt-4 text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.35em", color: "#a98a52" }}>{b.title}</p>
                 <p className="mt-4 text-[13px] font-light uppercase" style={{ ...sans, letterSpacing: "0.28em", color: "#8f7340" }}>{b.time}</p>
                 <h3 className="mt-4 text-2xl italic" style={{ color: "#463726" }}>{b.venue}</h3>
                 {b.address.map((l) => <p key={l} className="mt-1 text-sm font-light italic" style={{ color: "#6b5d4f" }}>{l}</p>)}
-                {b.mapsUrl && (
-                  <a href={b.mapsUrl} target="_blank" rel="noopener noreferrer" className="mt-6 inline-block rounded-full px-6 py-2.5 text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.22em", color: "#8f7340", border: "1px solid rgba(169,138,82,0.45)" }}>Open directions</a>
-                )}
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                  {b.mapsUrl && (
+                    <a href={b.mapsUrl} target="_blank" rel="noopener noreferrer" className="inline-block rounded-full px-6 py-2.5 text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.22em", color: "#8f7340", border: "1px solid rgba(169,138,82,0.45)" }}>Open directions</a>
+                  )}
+                  {b.startISO && (
+                    <button onClick={() => addToCalendar(b)} className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.22em", color: "#f6efe1", background: "linear-gradient(180deg,#b7995c,#8f7340)" }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <rect x="3" y="4.5" width="18" height="17" rx="2" />
+                        <path d="M3 9h18M8 2.5v4M16 2.5v4M12 12.5v5M9.5 15h5" />
+                      </svg>
+                      Add to calendar
+                    </button>
+                  )}
+                </div>
               </motion.div>
             ))}
           </div>
+          <VenueJourney />
         </div>
       </section>
 
@@ -539,17 +725,23 @@ export default function Website() {
       {site.timeline.length > 0 && (
         <section id="schedule" className="px-6 py-24" style={{ background: "#f3ead6" }}>
           <div className="mx-auto max-w-xl">
-            <Title kicker="The order of the day" title="Schedule" />
+            <Title kicker="The order of the day" title="How the Day Unfolds" />
             <div className="relative mx-auto max-w-sm">
               <div className="absolute bottom-2 left-[7px] top-2 w-px" style={{ background: "rgba(169,138,82,0.35)" }} aria-hidden />
-              {site.timeline.map((s) => (
-                <motion.div key={s.what} {...reveal} className="relative mb-8 pl-10 text-left last:mb-0">
-                  <span className="absolute left-0 top-1.5 h-4 w-4 rounded-full" style={{ background: "#f3ead6", border: "2px solid #a98a52" }} aria-hidden />
-                  <p className="text-[12px] font-light uppercase" style={{ ...sans, letterSpacing: "0.25em", color: "#8f7340" }}>{s.time}</p>
-                  <p className="mt-1 text-xl italic" style={{ color: "#463726" }}>{s.what}</p>
+              {site.timeline.map((s, i) => (
+                <motion.div key={s.what} {...reveal} className="relative mb-8 flex items-center gap-4 pl-10 text-left last:mb-0">
+                  <span className="absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full" style={{ background: "#f3ead6", border: "2px solid #a98a52" }} aria-hidden />
+                  <span className="text-sm" style={{ ...scriptFont, color: "#c8a25c" }} aria-hidden>{i + 1}</span>
+                  <div>
+                    {s.time && <p className="text-[12px] font-light uppercase" style={{ ...sans, letterSpacing: "0.25em", color: "#8f7340" }}>{s.time}</p>}
+                    <p className={`text-xl italic ${s.time ? "mt-1" : ""}`} style={{ color: "#463726" }}>{s.what}</p>
+                  </div>
                 </motion.div>
               ))}
             </div>
+            <motion.p {...reveal} className="mx-auto mt-10 max-w-xs text-center text-[13px] font-light italic" style={{ color: "#8a7a63" }}>
+              Timings to follow — for now, a little of what to look forward to.
+            </motion.p>
           </div>
         </section>
       )}
@@ -577,7 +769,36 @@ export default function Website() {
               </div>
             ))}
           </motion.div>
-          {site.dressNote && <motion.p {...reveal} className="mx-auto mt-8 max-w-md text-sm font-light italic leading-relaxed" style={{ color: "#6b5d4f" }}>{site.dressNote}</motion.p>}
+
+          {/* For Her ♀ / For Him ♂ */}
+          {(site.dressHer || site.dressHim) && (
+            <motion.div {...reveal} className="mx-auto mt-12 flex max-w-lg flex-col sm:flex-row">
+              {[
+                { sym: "♀", label: "For Her", note: site.dressHer },
+                { sym: "♂", label: "For Him", note: site.dressHim },
+              ]
+                .filter((g) => g.note)
+                .map((g, i) => (
+                  <div
+                    key={g.label}
+                    className={`flex flex-1 flex-col items-center px-6 py-6 ${i === 1 ? "border-t sm:border-l sm:border-t-0" : ""}`}
+                    style={i === 1 ? { borderColor: "rgba(169,138,82,0.3)" } : undefined}
+                  >
+                    <span
+                      className="flex h-14 w-14 items-center justify-center rounded-full text-3xl"
+                      style={{ color: "#a98a52", border: "1px solid rgba(169,138,82,0.4)", background: "#fbf6ea" }}
+                      aria-hidden
+                    >
+                      {g.sym}
+                    </span>
+                    <p className="mt-4 text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.32em", color: "#8f7340" }}>{g.label}</p>
+                    <p className="mt-3 text-sm font-light italic leading-relaxed" style={{ color: "#6b5d4f" }}>{g.note}</p>
+                  </div>
+                ))}
+            </motion.div>
+          )}
+
+          {site.dressNote && <motion.p {...reveal} className="mx-auto mt-10 max-w-md text-sm font-light italic leading-relaxed" style={{ color: "#6b5d4f" }}>{site.dressNote}</motion.p>}
         </div>
       </section>
 

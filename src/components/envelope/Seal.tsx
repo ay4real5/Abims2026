@@ -78,11 +78,12 @@ export default function Seal({ cracked, onOpen, className, style }: Props) {
   return (
     <motion.button
       type="button"
+      onPointerUp={onOpen}
       onClick={onOpen}
       disabled={cracked}
       aria-label="Break the seal and open the invitation"
       className={className}
-      style={{ ...style, WebkitTapHighlightColor: "transparent" }}
+      style={{ display: "block", border: 0, padding: 0, background: "transparent", cursor: cracked ? "default" : "pointer", touchAction: "manipulation", ...style, WebkitTapHighlightColor: "transparent" }}
       whileTap={cracked ? undefined : { scale: 0.93 }}
     >
       <motion.svg

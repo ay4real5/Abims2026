@@ -7,19 +7,22 @@ const script = localFont({
   src: "../fonts/GreatVibes-Regular.ttf",
   variable: "--font-script",
   weight: "400",
+  display: "swap",
 });
 
 const serif = Cormorant_Garamond({
   variable: "--font-serif",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
+  weight: ["300", "400", "500"],
   style: ["normal", "italic"],
+  display: "swap",
 });
 
 const sans = Jost({
   variable: "--font-sans",
   subsets: ["latin"],
   weight: ["300", "400"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -31,8 +34,6 @@ export const viewport: Viewport = {
   themeColor: "#efe6d4",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 };
 
 export default function RootLayout({

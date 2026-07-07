@@ -1,16 +1,18 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { site } from "@/config/site";
 import Photo from "./Photo";
-import OurStory from "./OurStory";
-import RsvpModal, { type RsvpChoice } from "./RsvpModal";
+import type { RsvpChoice } from "./RsvpModal";
 
 const serif = { fontFamily: "var(--font-serif)" };
 const sans = { fontFamily: "var(--font-sans)" };
 const scriptFont = { fontFamily: "var(--font-script), cursive" };
 const EASE = [0.22, 1, 0.36, 1] as const;
+const OurStory = dynamic(() => import("./OurStory"), { ssr: false });
+const RsvpModal = dynamic(() => import("./RsvpModal"), { ssr: false });
 
 /* transform-only reveal → content is never hidden if animation is skipped */
 const reveal = {
@@ -85,8 +87,24 @@ function Header() {
   const [open, setOpen] = useState(false);
   const [solid, setSolid] = useState(false);
   useEffect(() => {
-    const onScroll = () => setSolid(window.scrollY > window.innerHeight * 0.7);
-    onScroll();
+    let ticking = false;
+    let current = false;
+    const update = () => {
+      const next = window.scrollY > window.innerHeight * 0.7;
+      if (next !== current) {
+        current = next;
+        setSolid(next);
+      }
+    };
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        update();
+      });
+    };
+    update();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
@@ -192,7 +210,7 @@ function Lightbox({ src, onClose }: { src: string | null; onClose: () => void })
           exit={{ opacity: 0 }}
         >
           <motion.div className="relative h-[80vh] w-full max-w-3xl" initial={{ scale: 0.94 }} animate={{ scale: 1 }} exit={{ scale: 0.96 }} transition={{ duration: 0.35, ease: EASE }}>
-            <Photo src={src} alt="" className="h-full w-full rounded-lg" sizes="90vw" monogram={false} />
+            <Photo src={src} alt="" quality={90} className="h-full w-full rounded-lg" sizes="(min-width: 768px) 768px, 92vw" monogram={false} />
           </motion.div>
         </motion.div>
       )}
@@ -234,10 +252,10 @@ function GalleryCarousel({ photos, captions, onOpen }: { photos: string[]; capti
       <div className="relative flex h-[62vh] max-h-[560px] items-center justify-center">
         {/* side peeks (tap to move) */}
         <button onClick={() => go(-1)} aria-hidden tabIndex={-1} className="absolute left-0 h-[72%] w-[30%] overflow-hidden rounded-xl opacity-40" style={{ transform: "scale(0.9)" }}>
-          <Photo src={photos[prev]} alt="" className="h-full w-full" monogram={false} sizes="30vw" />
+          <Photo src={photos[prev]} alt="" quality={80} className="h-full w-full" monogram={false} sizes="(min-width: 640px) 160px, 30vw" />
         </button>
         <button onClick={() => go(1)} aria-hidden tabIndex={-1} className="absolute right-0 h-[72%] w-[30%] overflow-hidden rounded-xl opacity-40" style={{ transform: "scale(0.9)" }}>
-          <Photo src={photos[next]} alt="" className="h-full w-full" monogram={false} sizes="30vw" />
+          <Photo src={photos[next]} alt="" quality={80} className="h-full w-full" monogram={false} sizes="(min-width: 640px) 160px, 30vw" />
         </button>
 
         {/* active card — swipeable, tap to enlarge */}
@@ -259,7 +277,7 @@ function GalleryCarousel({ photos, captions, onOpen }: { photos: string[]; capti
             }}
             onClick={() => onOpen(photos[i])}
           >
-            <Photo src={photos[i]} alt="" quality={95} className="pointer-events-none h-full w-full" monogram={false} sizes="70vw" />
+            <Photo src={photos[i]} alt="" quality={88} className="pointer-events-none h-full w-full" monogram={false} sizes="(min-width: 640px) 360px, 70vw" />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5" style={{ background: "linear-gradient(180deg, transparent, rgba(24,16,6,0.8))" }} />
             {captions[i] && (
               <span className="pointer-events-none absolute bottom-5 left-6 text-2xl italic" style={{ ...serif, color: "#fdf3de", textShadow: "0 1px 10px rgba(0,0,0,0.7)" }}>
@@ -549,7 +567,7 @@ export default function Website() {
             animate={reduced ? undefined : { scale: [1, 1.08] }}
             transition={{ duration: 24, ease: "easeOut", repeat: Infinity, repeatType: "reverse" }}
           >
-            <Photo src={site.photos.hero} alt={site.coupleNames} priority quality={95} sizes="100vw" className="h-full w-full" monogram={!site.photos.hero} position="center 38%" />
+            <Photo src={site.photos.hero} alt={site.coupleNames} priority quality={92} sizes="100vw" className="h-full w-full" monogram={!site.photos.hero} position="center 38%" />
           </motion.div>
         </motion.div>
 
@@ -828,7 +846,7 @@ export default function Website() {
           animate={reduced ? undefined : { scale: [1, 1.06] }}
           transition={{ duration: 22, ease: "easeOut", repeat: Infinity, repeatType: "reverse" }}
         >
-          <Photo src={site.photos.rsvp} alt="" quality={95} sizes="100vw" className="h-full w-full" monogram={!site.photos.rsvp} position="center 35%" />
+          <Photo src={site.photos.rsvp} alt="" quality={88} sizes="100vw" className="h-full w-full" monogram={!site.photos.rsvp} position="center 35%" />
         </motion.div>
         <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(24,16,6,0.4), rgba(24,16,6,0.55))" }} />
         <div className="relative flex h-full items-center justify-center px-6 text-center">

@@ -113,7 +113,7 @@ export default function RsvpModal({ open, onClose, onChoose }: Props) {
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[80] flex items-center justify-center px-6 py-8"
+          className="fixed inset-0 z-[80] flex items-center justify-center px-5 py-4 sm:px-6 sm:py-8"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -130,7 +130,7 @@ export default function RsvpModal({ open, onClose, onChoose }: Props) {
             role="dialog"
             aria-modal="true"
             aria-label="RSVP"
-            className="relative max-h-[86vh] w-full max-w-sm overflow-y-auto rounded-2xl px-7 pb-8 pt-9 text-center shadow-2xl"
+            className="relative max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto rounded-2xl px-7 pb-8 pt-9 text-center shadow-2xl"
             style={{ background: "linear-gradient(178deg, #f8f2e4 0%, #f1e7d0 100%)" }}
             initial={{ opacity: 0, y: 26, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -161,9 +161,9 @@ export default function RsvpModal({ open, onClose, onChoose }: Props) {
                 <p className="text-center text-2xl italic" style={{ ...serif, color: "#4a3d2c" }}>Joyfully accepting</p>
                 <p className="mt-1 text-center text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.3em", color: "#a98a52" }}>A few details</p>
 
-                <input value={name} onChange={(e) => { setName(e.target.value); setError(""); }} placeholder="Full name" className="mt-5 w-full rounded-lg px-4 py-3 text-[15px] outline-none" style={field} />
-                <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="Email" className="mt-3 w-full rounded-lg px-4 py-3 text-[15px] outline-none" style={field} />
-                <input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" placeholder="Phone number" className="mt-3 w-full rounded-lg px-4 py-3 text-[15px] outline-none" style={field} />
+                <input value={name} onChange={(e) => { setName(e.target.value); setError(""); }} autoComplete="name" placeholder="Full name" className="mt-5 w-full rounded-lg px-4 py-3 text-[16px] outline-none focus:ring-2 focus:ring-[#c8a25c]/35" style={field} />
+                <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" inputMode="email" autoComplete="email" placeholder="Email" className="mt-3 w-full rounded-lg px-4 py-3 text-[16px] outline-none focus:ring-2 focus:ring-[#c8a25c]/35" style={field} />
+                <input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" inputMode="tel" autoComplete="tel" placeholder="Phone number" className="mt-3 w-full rounded-lg px-4 py-3 text-[16px] outline-none focus:ring-2 focus:ring-[#c8a25c]/35" style={field} />
 
                 <p className="mt-5 text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.2em", color: "#8a7a63" }}>How many of you? (including you)</p>
                 <div className="mt-3 flex flex-wrap gap-2">

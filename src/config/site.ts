@@ -113,4 +113,15 @@ export const site = {
 
   /** Shown small in the footer. "" hides it. */
   photographyCredit: "Tobi Dosunmu",
+
+  /**
+   * 🎵 Background music — starts when the envelope opens (a tap, so the
+   * browser allows sound), loops, with a mute button for guests.
+   * Drop an audio file into public/music and point `src` at it.
+   * Leave src "" for no music. See public/music/README.md.
+   */
+  music: {
+    src: "/music/dream-about-you.mp3",
+    title: "Lloyiso · Dream About You",
+  },
 };

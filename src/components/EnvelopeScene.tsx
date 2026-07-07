@@ -6,6 +6,7 @@ import EnvelopePocket from "./envelope/EnvelopePocket";
 import TopFlap from "./envelope/TopFlap";
 import Seal from "./envelope/Seal";
 import Website from "./Website";
+import { site } from "@/config/site";
 
 const NOISE =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E";
@@ -27,7 +28,42 @@ export default function EnvelopeScene() {
   const reduced = useReducedMotion();
   const [stage, setStage] = useState<Stage>("sealed");
   const [visited, setVisited] = useState(false);
+  const [musicOn, setMusicOn] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  // Start the song from within the tap handler so the browser allows sound.
+  // Gently fade the volume in.
+  const startMusic = useCallback(() => {
+    const a = audioRef.current;
+    if (!a || !site.music.src) return;
+    a.volume = 0;
+    a.play()
+      .then(() => {
+        setMusicOn(true);
+        const target = 0.5;
+        const id = setInterval(() => {
+          if (!audioRef.current) return clearInterval(id);
+          audioRef.current.volume = Math.min(target, audioRef.current.volume + 0.04);
+          if (audioRef.current.volume >= target) clearInterval(id);
+        }, 120);
+      })
+      .catch(() => {
+        /* no file yet, or blocked — the mute button can start it later */
+      });
+  }, []);
+
+  const toggleMusic = useCallback(() => {
+    const a = audioRef.current;
+    if (!a) return;
+    if (a.paused) {
+      a.volume = 0.5;
+      a.play().then(() => setMusicOn(true)).catch(() => {});
+    } else {
+      a.pause();
+      setMusicOn(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (localStorage.getItem("abims-opened")) setVisited(true);
@@ -48,13 +84,14 @@ export default function EnvelopeScene() {
     try {
       navigator.vibrate?.(12);
     } catch {}
+    startMusic();
     if (reduced) {
       setStage("done");
       return;
     }
     setStage("opening");
     timers.current = [setTimeout(() => setStage("done"), 1600)];
-  }, [stage, reduced]);
+  }, [stage, reduced, startMusic]);
 
   const sealed = stage === "sealed";
   const opening = stage === "opening";
@@ -147,7 +184,7 @@ export default function EnvelopeScene() {
             {/* returning guests: skip straight in */}
             {sealed && visited && (
               <motion.button
-                onClick={() => setStage("done")}
+                onClick={() => { startMusic(); setStage("done"); }}
                 className="absolute bottom-7 left-1/2 z-[60] -translate-x-1/2 text-[9px] font-light uppercase underline underline-offset-4"
                 style={{ fontFamily: "var(--font-sans)", letterSpacing: "0.35em", color: "#8a7a63" }}
                 initial={{ opacity: 0 }}
@@ -159,6 +196,44 @@ export default function EnvelopeScene() {
             )}
           </motion.div>
         )}
+
+      {/* background music (plays after the envelope opens) */}
+      {site.music.src && <audio ref={audioRef} src={site.music.src} loop preload="auto" />}
+
+      {/* floating music toggle, once inside */}
+      {done && site.music.src && (
+        <motion.button
+          onClick={toggleMusic}
+          aria-label={musicOn ? "Pause music" : "Play music"}
+          title={site.music.title}
+          className="fixed bottom-5 right-5 z-[70] flex h-12 w-12 items-center justify-center rounded-full"
+          style={{ background: "rgba(250,245,234,0.92)", border: "1px solid rgba(169,138,82,0.45)", boxShadow: "0 6px 18px rgba(120,90,40,0.2)", backdropFilter: "blur(4px)" }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+        >
+          {musicOn ? (
+            <span className="flex items-end gap-[3px]" aria-hidden>
+              {[0, 1, 2].map((b) => (
+                <motion.span
+                  key={b}
+                  className="w-[3px] rounded-full"
+                  style={{ background: "#8f7340" }}
+                  animate={{ height: [6, 15, 6] }}
+                  transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut", delay: b * 0.18 }}
+                />
+              ))}
+            </span>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8f7340" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M9 18V6l10-2v12" />
+              <circle cx="6" cy="18" r="3" />
+              <circle cx="16" cy="16" r="3" />
+              <path d="M3 3l18 18" stroke="#b4562f" />
+            </svg>
+          )}
+        </motion.button>
+      )}
     </main>
   );
 }

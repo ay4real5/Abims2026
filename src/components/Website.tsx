@@ -191,60 +191,101 @@ function Lightbox({ src, onClose }: { src: string | null; onClose: () => void })
   );
 }
 
-/* ── gallery carousel (coverflow) ────────────────────────────── */
+/* ── gallery carousel (coverflow, swipeable) ─────────────────── */
 function GalleryCarousel({ photos, captions, onOpen }: { photos: string[]; captions: string[]; onOpen: (s: string) => void }) {
+  const reduced = useReducedMotion();
   const [i, setI] = useState(0);
+  const [touched, setTouched] = useState(false);
   const n = photos.length;
-  const go = (d: number) => setI((v) => (v + d + n) % n);
+  const go = (d: number) => { setTouched(true); setI((v) => (v + d + n) % n); };
+  const jump = (idx: number) => { setTouched(true); setI(idx); };
   const prev = (i - 1 + n) % n;
   const next = (i + 1) % n;
-  const Arrow = ({ dir, onClick }: { dir: "l" | "r"; onClick: () => void }) => (
+
+  // gentle auto-advance until the guest takes over — signals it's interactive
+  useEffect(() => {
+    if (touched || reduced || n < 2) return;
+    const t = setInterval(() => setI((v) => (v + 1) % n), 4500);
+    return () => clearInterval(t);
+  }, [touched, reduced, n]);
+
+  const Arrow = ({ dir }: { dir: "l" | "r" }) => (
     <button
-      onClick={onClick}
-      aria-label={dir === "l" ? "Previous" : "Next"}
-      className="absolute top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full text-xl transition-transform active:scale-90"
-      style={{ [dir === "l" ? "left" : "right"]: 6, background: "rgba(250,245,234,0.92)", border: "1px solid rgba(169,138,82,0.4)", color: "#8f7340", boxShadow: "0 6px 18px rgba(120,90,40,0.15)" }}
+      onClick={() => go(dir === "l" ? -1 : 1)}
+      aria-label={dir === "l" ? "Previous photo" : "Next photo"}
+      className="absolute top-1/2 z-30 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full text-2xl transition-all hover:scale-105 active:scale-90"
+      style={{ [dir === "l" ? "left" : "right"]: -6, background: "linear-gradient(180deg,#f4e6c4,#d9b975)", color: "#5b4326", boxShadow: "0 8px 22px rgba(120,90,40,0.35)" }}
     >
       {dir === "l" ? "‹" : "›"}
     </button>
   );
+
   return (
-    <div className="relative mx-auto flex h-[64vh] max-h-[560px] max-w-lg items-center justify-center">
-      {/* side peeks */}
-      <div className="absolute left-0 h-[74%] w-[34%] overflow-hidden rounded-xl opacity-45" style={{ transform: "scale(0.9)" }}>
-        <Photo src={photos[prev]} alt="" className="h-full w-full" monogram={false} sizes="30vw" />
-      </div>
-      <div className="absolute right-0 h-[74%] w-[34%] overflow-hidden rounded-xl opacity-45" style={{ transform: "scale(0.9)" }}>
-        <Photo src={photos[next]} alt="" className="h-full w-full" monogram={false} sizes="30vw" />
-      </div>
-      {/* active card */}
-      <AnimatePresence mode="popLayout">
-        <motion.button
-          key={i}
-          onClick={() => onOpen(photos[i])}
-          className="relative z-10 h-full w-[68%] overflow-hidden rounded-2xl"
-          style={{ boxShadow: "0 20px 50px rgba(120,90,40,0.28)" }}
-          initial={{ opacity: 0, scale: 0.92 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.92 }}
-          transition={{ duration: 0.45, ease: EASE }}
-        >
-          <Photo src={photos[i]} alt="" quality={95} className="h-full w-full" monogram={false} sizes="70vw" />
-          <div className="absolute inset-x-0 bottom-0 h-1/3" style={{ background: "linear-gradient(180deg, transparent, rgba(24,16,6,0.75))" }} />
-          {captions[i] && (
-            <span className="absolute bottom-5 left-6 text-2xl italic" style={{ ...serif, color: "#fdf3de", textShadow: "0 1px 10px rgba(0,0,0,0.6)" }}>
-              {captions[i]}
+    <div className="mx-auto max-w-lg">
+      <div className="relative flex h-[62vh] max-h-[560px] items-center justify-center">
+        {/* side peeks (tap to move) */}
+        <button onClick={() => go(-1)} aria-hidden tabIndex={-1} className="absolute left-0 h-[72%] w-[30%] overflow-hidden rounded-xl opacity-40" style={{ transform: "scale(0.9)" }}>
+          <Photo src={photos[prev]} alt="" className="h-full w-full" monogram={false} sizes="30vw" />
+        </button>
+        <button onClick={() => go(1)} aria-hidden tabIndex={-1} className="absolute right-0 h-[72%] w-[30%] overflow-hidden rounded-xl opacity-40" style={{ transform: "scale(0.9)" }}>
+          <Photo src={photos[next]} alt="" className="h-full w-full" monogram={false} sizes="30vw" />
+        </button>
+
+        {/* active card — swipeable, tap to enlarge */}
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.div
+            key={i}
+            className="relative z-20 h-full w-[70%] cursor-grab overflow-hidden rounded-2xl active:cursor-grabbing"
+            style={{ boxShadow: "0 22px 54px rgba(120,90,40,0.3)" }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.45, ease: EASE }}
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.18}
+            onDragEnd={(_, info) => {
+              if (info.offset.x < -60) go(1);
+              else if (info.offset.x > 60) go(-1);
+            }}
+            onClick={() => onOpen(photos[i])}
+          >
+            <Photo src={photos[i]} alt="" quality={95} className="pointer-events-none h-full w-full" monogram={false} sizes="70vw" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5" style={{ background: "linear-gradient(180deg, transparent, rgba(24,16,6,0.8))" }} />
+            {captions[i] && (
+              <span className="pointer-events-none absolute bottom-5 left-6 text-2xl italic" style={{ ...serif, color: "#fdf3de", textShadow: "0 1px 10px rgba(0,0,0,0.7)" }}>
+                {captions[i]}
+              </span>
+            )}
+            {/* tap-to-view badge */}
+            <span className="pointer-events-none absolute right-4 top-4 rounded-full px-3 py-1 text-[9px] uppercase" style={{ ...sans, letterSpacing: "0.2em", color: "#3a2c14", background: "rgba(244,230,196,0.9)" }}>
+              Tap to view
             </span>
-          )}
-        </motion.button>
-      </AnimatePresence>
-      <Arrow dir="l" onClick={() => go(-1)} />
-      <Arrow dir="r" onClick={() => go(1)} />
-      {/* dots */}
-      <div className="absolute -bottom-8 left-1/2 flex -translate-x-1/2 gap-2">
-        {photos.map((_, d) => (
-          <span key={d} className="h-1.5 w-1.5 rounded-full transition-colors" style={{ background: d === i ? "#a98a52" : "rgba(169,138,82,0.3)" }} />
-        ))}
+          </motion.div>
+        </AnimatePresence>
+
+        <Arrow dir="l" />
+        <Arrow dir="r" />
+      </div>
+
+      {/* counter + dots + hint */}
+      <div className="mt-7 flex flex-col items-center gap-3">
+        <p className="text-[12px]" style={{ ...serif, color: "#8f7340" }}>
+          <span style={{ fontSize: "1.2em", color: "#463726" }}>{i + 1}</span> / {n}
+        </p>
+        <div className="flex gap-2">
+          {photos.map((_, d) => (
+            <button key={d} onClick={() => jump(d)} aria-label={`Go to photo ${d + 1}`} className="h-2 rounded-full transition-all" style={{ width: d === i ? 20 : 8, background: d === i ? "#a98a52" : "rgba(169,138,82,0.35)" }} />
+          ))}
+        </div>
+        <motion.p
+          className="text-[10px] font-light uppercase"
+          style={{ ...sans, letterSpacing: "0.35em", color: "#a98a52" }}
+          animate={touched ? { opacity: 0.55 } : reduced ? { opacity: 0.8 } : { opacity: [0.4, 1, 0.4] }}
+          transition={touched ? { duration: 0.4 } : { duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+        >
+          ‹ swipe to explore ›
+        </motion.p>
       </div>
     </div>
   );
@@ -305,7 +346,6 @@ export default function Website() {
   const [rsvpOpen, setRsvpOpen] = useState(false);
   const [replied, setReplied] = useState<RsvpChoice | null>(null);
   const [lightbox, setLightbox] = useState<string | null>(null);
-  const [galleryView, setGalleryView] = useState<"grid" | "carousel">("grid");
   const [giftsOpen, setGiftsOpen] = useState(false);
 
   useEffect(() => {
@@ -456,43 +496,7 @@ export default function Website() {
         <section id="gallery" className="px-6 py-24" style={{ background: "#faf5ea" }}>
           <div className="mx-auto max-w-5xl">
             <Title kicker="Memories" title="A Living Gallery" />
-
-            {/* grid / carousel toggle */}
-            <div className="mb-12 flex items-center justify-center gap-3">
-              {(["grid", "carousel"] as const).map((v) => (
-                <button
-                  key={v}
-                  onClick={() => setGalleryView(v)}
-                  className="rounded-full px-6 py-2.5 text-[11px] uppercase transition-all"
-                  style={
-                    galleryView === v
-                      ? { ...sans, letterSpacing: "0.22em", color: "#f6efe1", background: "linear-gradient(180deg,#b7995c,#8f7340)" }
-                      : { ...sans, letterSpacing: "0.22em", color: "#8f7340", border: "1px solid rgba(169,138,82,0.4)" }
-                  }
-                >
-                  {v}
-                </button>
-              ))}
-            </div>
-
-            {galleryView === "grid" ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
-                {site.photos.gallery.map((src, i) => (
-                  <motion.button
-                    key={src + i}
-                    {...reveal}
-                    onClick={() => setLightbox(src)}
-                    className="group relative block aspect-[4/5] w-full overflow-hidden rounded-xl"
-                    style={{ boxShadow: "0 10px 26px rgba(120,90,40,0.12)" }}
-                  >
-                    <Photo src={src} alt="" quality={95} sizes="(min-width:640px) 30vw, 48vw" className="h-full w-full transition-transform duration-700 group-hover:scale-[1.06]" monogram={false} />
-                    <span className="pointer-events-none absolute inset-0 rounded-xl" style={{ boxShadow: "inset 0 0 0 1px rgba(143,115,64,0.14)" }} />
-                  </motion.button>
-                ))}
-              </div>
-            ) : (
-              <GalleryCarousel photos={site.photos.gallery} captions={site.photos.galleryCaptions} onOpen={setLightbox} />
-            )}
+            <GalleryCarousel photos={site.photos.gallery} captions={site.photos.galleryCaptions} onOpen={setLightbox} />
           </div>
         </section>
       )}

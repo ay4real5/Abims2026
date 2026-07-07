@@ -73,7 +73,7 @@ export const site = {
    */
   photos: {
     /** Full-screen opening image behind the names. Portrait works best on phones. */
-    hero: "/photos/a6.jpg",
+    hero: "/photos/a5.jpg",
     /** Our Story — one image per story paragraph, shown alongside the text. */
     story: ["/photos/a4.jpg", "/photos/a2.jpg", "/photos/a1.jpg"] as string[],
     /** Full-width image behind the RSVP invitation. */

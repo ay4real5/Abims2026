@@ -185,7 +185,7 @@ export default function Website() {
           animate={reduced ? undefined : { scale: [1, 1.07] }}
           transition={{ duration: 24, ease: "easeOut", repeat: Infinity, repeatType: "reverse" }}
         >
-          <Photo src={site.photos.hero} alt={site.coupleNames} priority quality={95} sizes="100vw" className="h-full w-full" monogram={!site.photos.hero} position="center 30%" />
+          <Photo src={site.photos.hero} alt={site.coupleNames} priority quality={95} sizes="100vw" className="h-full w-full" monogram={!site.photos.hero} position="center 38%" />
         </motion.div>
         {/* cinematic scrim — light at top so faces read, deep at the base for the type */}
         <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(24,16,6,0.32) 0%, rgba(24,16,6,0.04) 26%, rgba(24,16,6,0.16) 52%, rgba(24,16,6,0.7) 82%, rgba(24,16,6,0.9) 100%)" }} />

@@ -569,16 +569,15 @@ export default function Website() {
         <div className="mx-auto max-w-2xl">
           <Title kicker="What to wear" title="Dress Code" />
           <motion.p {...reveal} className="text-2xl italic" style={{ color: "#463726" }}>{site.dressCode}</motion.p>
-          <motion.div {...reveal} className="mt-8 flex items-center justify-center gap-5">
-            {[{ c: "#e8dcc0", label: "Ivory" }, { c: "#d9b975", label: "Champagne" }, { c: "#a98a52", label: "Gold" }].map((s) => (
+          <motion.div {...reveal} className="mt-8 flex items-center justify-center gap-8">
+            {[{ c: "#e8dcc0", label: "Ivory" }, { c: "#cdb06a", label: "Champagne Gold" }].map((s) => (
               <div key={s.label} className="flex flex-col items-center gap-2">
-                <div className="h-12 w-12 rounded-full" style={{ background: s.c, boxShadow: "inset 0 2px 6px rgba(255,255,255,0.5), 0 2px 8px rgba(120,90,40,0.15)" }} />
+                <div className="h-14 w-14 rounded-full" style={{ background: s.c, boxShadow: "inset 0 2px 6px rgba(255,255,255,0.5), 0 2px 8px rgba(120,90,40,0.15)" }} />
                 <span className="text-[9px] font-light uppercase" style={{ ...sans, letterSpacing: "0.2em", color: "#8a7a63" }}>{s.label}</span>
               </div>
             ))}
           </motion.div>
-          {site.dressLadies && <motion.p {...reveal} className="mt-8 text-sm font-light italic" style={{ color: "#6b5d4f" }}>Ladies — {site.dressLadies}</motion.p>}
-          {site.dressGentlemen && <motion.p {...reveal} className="mt-2 text-sm font-light italic" style={{ color: "#6b5d4f" }}>Gentlemen — {site.dressGentlemen}</motion.p>}
+          {site.dressNote && <motion.p {...reveal} className="mx-auto mt-8 max-w-md text-sm font-light italic leading-relaxed" style={{ color: "#6b5d4f" }}>{site.dressNote}</motion.p>}
         </div>
       </section>
 

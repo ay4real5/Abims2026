@@ -42,9 +42,8 @@ export const site = {
   },
 
   dressCode: "Champagne gold & ivory",
-  /** His & hers guidance under the dress code. "" hides a line. */
-  dressLadies: "Elegant dresses — champagne, gold or ivory tones",
-  dressGentlemen: "Suits — a touch of gold is warmly encouraged",
+  /** One line of guidance shown under the two colour swatches. */
+  dressNote: "Ladies & gentlemen — dress elegantly, with a touch of champagne gold or ivory.",
 
   /** Hour-by-hour day plan. Empty array hides the timeline. */
   timeline: [

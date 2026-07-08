@@ -722,6 +722,13 @@ export default function Website() {
             Together with their families, they joyfully invite you to celebrate their marriage.
           </p>
 
+          <div className="mx-auto mt-7 max-w-sm rounded-full px-5 py-3" style={{ background: "rgba(255,253,247,0.62)", border: "1px solid rgba(169,138,82,0.24)", boxShadow: "0 12px 28px rgba(120,90,40,0.08)" }}>
+            <p className="text-[9px] font-light uppercase" style={{ ...sans, letterSpacing: "0.34em", color: "#a98a52" }}>Families</p>
+            <p className="mt-1 text-sm italic" style={{ ...serif, color: "#5b4a35" }}>
+              The {site.brideFamily} Family <span style={{ color: "#a98a52" }}>✦</span> The {site.groomFamily} Family
+            </p>
+          </div>
+
           <p className="mt-10 text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.4em", color: "#a98a52" }}>Saturday</p>
           <p className="mt-2 text-4xl italic" style={{ ...serif, color: "#463726" }}>15 August 2026</p>
           <p className="mt-3 text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.18em", color: "#6b5d4f" }}>

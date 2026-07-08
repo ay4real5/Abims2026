@@ -7,6 +7,8 @@ export const site = {
   initials: ["O", "A"] as const,
   /** Names as they appear on the envelope and card */
   coupleNames: "Oyebimpe & Ayorinde",
+  brideFamily: "Oyewole",
+  groomFamily: "Awarun",
   year: "2026",
 
   /** On the envelope flap, e.g. "Saturday · 15 August · 2026" */

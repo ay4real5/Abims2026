@@ -382,49 +382,122 @@ function GiftModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 }
 
 /* ── blessings wall ──────────────────────────────────────────── */
+type Blessing = {
+  id: string;
+  name: string;
+  message: string;
+  createdAt: string;
+};
+
 function BlessingWall() {
   const [name, setName] = useState("");
   const [msg, setMsg] = useState("");
-  const post = () => {
-    if (!msg.trim()) return;
-    const text = `${site.hashtag} — A blessing for ${site.coupleNames} from ${name.trim() || "a well-wisher"}: ${msg.trim()}`;
-    window.open(waShare(text), "_blank", "noopener,noreferrer");
-    setMsg("");
-    setName("");
+  const [blessings, setBlessings] = useState<Blessing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/blessings", { cache: "no-store" })
+      .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
+      .then(({ ok, data }) => {
+        if (!active) return;
+        if (!ok) throw new Error(data?.error || "Unable to load blessings.");
+        setBlessings(Array.isArray(data.blessings) ? data.blessings : []);
+      })
+      .catch((err) => {
+        if (active) setError(err instanceof Error ? err.message : "Unable to load blessings.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const post = async () => {
+    const message = msg.trim();
+    if (!message) {
+      setError("Please write a blessing before posting.");
+      setNotice("");
+      return;
+    }
+    setSubmitting(true);
+    setError("");
+    setNotice("");
+    try {
+      const res = await fetch("/api/blessings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), message }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error || "Unable to post blessing.");
+      setBlessings((items) => [data.blessing, ...items].slice(0, 50));
+      setMsg("");
+      setName("");
+      setNotice("Your blessing has been added to the wall.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to post blessing.");
+    } finally {
+      setSubmitting(false);
+    }
   };
+
   const field = { ...sans, background: "#f6efe1", color: "#463726", border: "1px solid rgba(169,138,82,0.3)" } as const;
   return (
     <section id="blessings" className="px-6 py-24" style={{ background: "linear-gradient(180deg,#241a0e 0%,#191109 100%)" }}>
-      <div className="mx-auto max-w-lg text-center">
+      <div className="mx-auto max-w-4xl text-center">
         <p className="text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.45em", color: "#c8a25c" }}>Blessings Wall</p>
         <h2 className="mt-3 text-4xl italic sm:text-5xl" style={{ ...serif, color: "#f6ead0" }}>Leave a Wish</h2>
-        <div className="mt-10 rounded-2xl p-5 text-left" style={{ background: "rgba(255,250,238,0.04)", border: "1px solid rgba(169,138,82,0.25)" }}>
+        <div className="mx-auto mt-10 max-w-lg rounded-2xl p-5 text-left" style={{ background: "rgba(255,250,238,0.04)", border: "1px solid rgba(169,138,82,0.25)" }}>
           <input
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => setName(e.target.value.slice(0, 60))}
             placeholder="Your name"
             className="w-full rounded-lg px-4 py-3.5 text-[15px] outline-none"
             style={field}
           />
           <textarea
             value={msg}
-            onChange={(e) => setMsg(e.target.value)}
+            onChange={(e) => setMsg(e.target.value.slice(0, 300))}
             placeholder={`Your blessing for ${site.coupleNames}`}
             rows={4}
             className="mt-3 w-full resize-none rounded-lg px-4 py-3.5 text-[15px] outline-none"
             style={field}
           />
+          <div className="mt-2 flex justify-end text-[10px]" style={{ ...sans, color: "rgba(246,234,208,0.55)" }}>{msg.length}/300</div>
           <button
             onClick={post}
-            className="mt-3 w-full rounded-lg py-3.5 text-[12px] uppercase transition-transform active:scale-[0.98]"
+            disabled={submitting}
+            className="mt-3 w-full rounded-lg py-3.5 text-[12px] uppercase transition-transform active:scale-[0.98] disabled:opacity-60"
             style={{ ...sans, letterSpacing: "0.3em", color: "#f6ead0", background: "transparent", border: "1px solid rgba(200,162,92,0.7)" }}
           >
-            Post blessing
+            {submitting ? "Posting…" : "Post blessing"}
           </button>
+          {notice && <p className="mt-3 text-center text-[12px] italic" style={{ ...serif, color: "#f6ead0" }}>{notice}</p>}
+          {error && <p className="mt-3 text-center text-[12px] italic" style={{ ...serif, color: "#f3b58e" }}>{error}</p>}
         </div>
         <p className="mt-4 text-[11px] font-light italic" style={{ ...serif, color: "rgba(246,234,208,0.6)" }}>
-          Your wish opens WhatsApp to send straight to the couple.
+          Your blessing will appear on this wall for everyone to celebrate with us.
         </p>
+
+        <div className="mt-10 grid gap-4 text-left sm:grid-cols-2">
+          {loading && <p className="sm:col-span-2 text-center text-sm italic" style={{ ...serif, color: "rgba(246,234,208,0.7)" }}>Loading blessings…</p>}
+          {!loading && blessings.length === 0 && !error && <p className="sm:col-span-2 text-center text-sm italic" style={{ ...serif, color: "rgba(246,234,208,0.7)" }}>Be the first to leave a blessing.</p>}
+          {blessings.map((blessing) => (
+            <article key={blessing.id} className="rounded-2xl p-5" style={{ background: "rgba(255,250,238,0.055)", border: "1px solid rgba(169,138,82,0.22)" }}>
+              <p className="text-lg italic leading-relaxed" style={{ ...serif, color: "#f6ead0" }}>“{blessing.message}”</p>
+              <div className="mt-4 flex items-center justify-between gap-3 text-[10px] uppercase" style={{ ...sans, letterSpacing: "0.24em", color: "rgba(200,162,92,0.86)" }}>
+                <span>{blessing.name}</span>
+                <time dateTime={blessing.createdAt}>{new Date(blessing.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}</time>
+              </div>
+            </article>
+          ))}
+        </div>
       </div>
     </section>
   );

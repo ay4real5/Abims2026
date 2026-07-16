@@ -87,6 +87,18 @@ export default function RsvpModal({ open, onClose, onChoose }: Props) {
           setError("Something went wrong sending your RSVP — please try again in a moment.");
           return;
         }
+        /* Guest-list copy — best effort; feeds the private /rsvps page. */
+        fetch("/api/rsvp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: name.trim(),
+            email: email.trim(),
+            phone: phone.trim(),
+            guests,
+            attending: "Yes",
+          }),
+        }).catch(() => {});
         if (site.emailjs.templateId) {
           /* Guest confirmation email — best effort; the RSVP is already recorded above. */
           fetch("https://api.emailjs.com/api/v1.0/email/send", {

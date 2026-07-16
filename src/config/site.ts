@@ -71,8 +71,8 @@ export const site = {
     kind: "toast",
     venue: "Blancstorystudios",
     address: ["M12 6JR"],
-    time: "12:00 noon",
-    startISO: "2026-08-15T12:00:00+01:00",
+    time: "1:00 pm",
+    startISO: "2026-08-15T13:00:00+01:00",
     mapsUrl: "https://www.google.com/maps/search/?api=1&query=Blancstorystudios%2C%20M12%206JR",
   },
 

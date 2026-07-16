@@ -166,6 +166,9 @@ export default function RsvpModal({ open, onClose, onChoose }: Props) {
             {step === "ask" && (
               <>
                 <p className="text-2xl italic" style={{ ...serif, color: "#4a3d2c" }}>Will you join us?</p>
+                <p className="mt-3 text-[13px] font-light italic leading-relaxed" style={{ ...serif, color: "#8a7a63" }}>
+                  Kindly reply only if you will be attending
+                </p>
                 <div className="mt-8 flex items-stretch justify-center gap-4">
                   <button onClick={pickYes} className="flex-1 rounded-xl px-4 py-5 transition-transform active:scale-95" style={{ background: "linear-gradient(180deg, #a98a52 0%, #8f7340 100%)", boxShadow: "0 2px 10px rgba(120,90,40,0.35), inset 0 1px 0 rgba(255,240,200,0.4)" }}>
                     <span className="mb-2 block text-xl" aria-hidden style={{ color: "#f8f0dc" }}>♥</span>
@@ -185,6 +188,9 @@ export default function RsvpModal({ open, onClose, onChoose }: Props) {
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="text-left">
                 <p className="text-center text-2xl italic" style={{ ...serif, color: "#4a3d2c" }}>Joyfully accepting</p>
                 <p className="mt-1 text-center text-[11px] font-light uppercase" style={{ ...sans, letterSpacing: "0.3em", color: "#a98a52" }}>A few details</p>
+                <p className="mt-3 text-center text-[13px] font-light italic leading-relaxed" style={{ ...serif, color: "#8a7a63" }}>
+                  Kindly complete this only if you will be attending
+                </p>
 
                 <input value={name} onChange={(e) => { setName(e.target.value); setError(""); }} autoComplete="name" placeholder="Full name" className="mt-5 w-full rounded-lg px-4 py-3 text-[16px] outline-none focus:ring-2 focus:ring-[#c8a25c]/35" style={field} />
                 <input value={email} onChange={(e) => { setEmail(e.target.value); setError(""); }} type="email" inputMode="email" autoComplete="email" placeholder="Email (for your confirmation)" className="mt-3 w-full rounded-lg px-4 py-3 text-[16px] outline-none focus:ring-2 focus:ring-[#c8a25c]/35" style={field} />

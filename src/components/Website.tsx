@@ -770,7 +770,7 @@ export default function Website() {
               </p>
             ) : (
               <p className="text-[12px] font-light" style={{ ...sans, letterSpacing: "0.06em", color: "#8a7a63" }}>
-                Tap the button above to let us know
+                Kindly RSVP only if you will be attending
               </p>
             )}
 

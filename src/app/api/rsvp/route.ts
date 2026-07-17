@@ -64,7 +64,7 @@ function serialize(row: RsvpRow) {
   };
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const sql = getSql();
   if (!sql) {
     return NextResponse.json({ error: "DATABASE_URL is not configured." }, { status: 503 });
@@ -83,13 +83,30 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Name is required." }, { status: 400 });
   }
 
+  /* Admin-only backdating: with the admin key, an ISO `receivedAt` in the
+     body sets created_at — used to backfill replies that predate this API.
+     Public submissions can't influence their timestamp. */
+  let backdate: string | null = null;
+  if (request.nextUrl.searchParams.get("key") === ADMIN_KEY && typeof body.receivedAt === "string") {
+    const t = new Date(body.receivedAt);
+    if (!Number.isNaN(t.getTime())) backdate = t.toISOString();
+  }
+
   try {
     await ensureTable(sql);
-    await sql`
-      INSERT INTO rsvps (name, email, phone, guests, attending)
-      VALUES (${name}, ${normalize(body.email)}, ${normalize(body.phone)},
-              ${normalize(body.guests)}, ${normalize(body.attending) || "Yes"});
-    `;
+    if (backdate) {
+      await sql`
+        INSERT INTO rsvps (name, email, phone, guests, attending, created_at)
+        VALUES (${name}, ${normalize(body.email)}, ${normalize(body.phone)},
+                ${normalize(body.guests)}, ${normalize(body.attending) || "Yes"}, ${backdate});
+      `;
+    } else {
+      await sql`
+        INSERT INTO rsvps (name, email, phone, guests, attending)
+        VALUES (${name}, ${normalize(body.email)}, ${normalize(body.phone)},
+                ${normalize(body.guests)}, ${normalize(body.attending) || "Yes"});
+      `;
+    }
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Unable to save RSVP." }, { status: 500 });

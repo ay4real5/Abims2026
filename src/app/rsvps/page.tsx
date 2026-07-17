@@ -21,10 +21,13 @@ type RsvpRecord = {
 const serif = { fontFamily: "var(--font-serif)" };
 const sans = { fontFamily: "var(--font-sans)" };
 
-/** "Just me" → 1, "+1" → 2, "3"/"4" → n, "5+" → 5 */
+/** "Just me" → 1, "+1" → 2, "+2" → 3; legacy "3"/"4"/"5+" → n */
 function headcount(guests: string): number {
   if (!guests || guests === "Just me") return 1;
-  if (guests === "+1") return 2;
+  if (guests.startsWith("+")) {
+    const extra = parseInt(guests.slice(1), 10);
+    return Number.isNaN(extra) ? 1 : 1 + extra;
+  }
   const n = parseInt(guests, 10);
   return Number.isNaN(n) ? 1 : n;
 }

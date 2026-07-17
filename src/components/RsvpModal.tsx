@@ -17,7 +17,7 @@ type Props = {
 
 type Step = "ask" | "form" | "done";
 
-const GUEST_OPTIONS = ["Just me", "+1", "3", "4", "5+"];
+const GUEST_OPTIONS = ["Just me", "+1", "+2"];
 
 /**
  * RSVP flow:

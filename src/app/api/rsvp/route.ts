@@ -135,10 +135,14 @@ export async function GET(request: NextRequest) {
   }
 
   if (request.nextUrl.searchParams.get("format") === "csv") {
-    const esc = (v: string) => `"${v.replaceAll('"', '""')}"`;
+    // created_at arrives from the Neon driver as a Date, so coerce every cell
+    const esc = (v: unknown) => `"${String(v ?? "").replaceAll('"', '""')}"`;
     const table = [
       ["Name", "Email", "Phone", "Guests", "Attending", "Received"],
-      ...rows.map((r) => [r.name, r.email, r.phone, r.guests, r.attending, r.created_at]),
+      ...rows.map((r) => [
+        r.name, r.email, r.phone, r.guests, r.attending,
+        new Date(r.created_at).toISOString(),
+      ]),
     ];
     const csv = table.map((row) => row.map(esc).join(",")).join("\r\n");
     return new Response(csv, {

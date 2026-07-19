@@ -32,11 +32,17 @@ function headcount(guests: string): number {
   return Number.isNaN(n) ? 1 : n;
 }
 
+const emptyForm = { name: "", email: "", phone: "", guests: "Just me", attending: "Yes" };
+
 export default function RsvpsPage() {
   const [key, setKey] = useState("");
   const [entered, setEntered] = useState(false);
   const [rsvps, setRsvps] = useState<RsvpRecord[] | null>(null);
   const [error, setError] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
 
   const load = async (k: string) => {
     setError("");
@@ -64,6 +70,46 @@ export default function RsvpsPage() {
       void load(saved);
     }
   }, []);
+
+  const startAdd = () => {
+    setForm(emptyForm);
+    setEditingId(null);
+    setShowForm(true);
+  };
+
+  const startEdit = (r: RsvpRecord) => {
+    setForm({ name: r.name, email: r.email, phone: r.phone, guests: r.guests || "Just me", attending: r.attending || "Yes" });
+    setEditingId(r.id);
+    setShowForm(true);
+  };
+
+  const cancelForm = () => {
+    setShowForm(false);
+    setEditingId(null);
+    setForm(emptyForm);
+  };
+
+  const submitForm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim() || saving) return;
+    setSaving(true);
+    setError("");
+    const url = editingId
+      ? `/api/rsvp?key=${encodeURIComponent(key)}&id=${encodeURIComponent(editingId)}`
+      : `/api/rsvp?key=${encodeURIComponent(key)}`;
+    const res = await fetch(url, {
+      method: editingId ? "PATCH" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+    setSaving(false);
+    if (!res.ok) {
+      setError("Couldn't save — please try again.");
+      return;
+    }
+    cancelForm();
+    void load(key);
+  };
 
   const remove = async (r: RsvpRecord) => {
     if (!window.confirm(`Remove the RSVP from ${r.name}?`)) return;
@@ -127,6 +173,97 @@ export default function RsvpsPage() {
               <p className="mt-2 text-center text-[12px] italic" style={{ ...serif, color: "#b4562f" }}>{error}</p>
             )}
 
+            {!showForm && (
+              <div className="mt-6 text-center">
+                <button
+                  onClick={startAdd}
+                  className="rounded-full px-6 py-2.5 text-[11px] uppercase"
+                  style={{ ...sans, letterSpacing: "0.3em", color: "#f6efe1", background: "linear-gradient(180deg,#b7995c,#8f7340)" }}
+                >
+                  + Add guest
+                </button>
+                <p className="mt-2 text-[11px] italic" style={{ ...serif, color: "#8a7a63" }}>
+                  For guests who replied by phone or in person instead of the invitation.
+                </p>
+              </div>
+            )}
+
+            {showForm && (
+              <form
+                onSubmit={submitForm}
+                className="mx-auto mt-6 max-w-md rounded-2xl p-5 shadow-lg"
+                style={{ background: "#fffdf7", border: "1px solid rgba(169,138,82,0.25)" }}
+              >
+                <p className="text-center text-[11px] uppercase" style={{ ...sans, letterSpacing: "0.25em", color: "#8f7340" }}>
+                  {editingId ? "Edit reply" : "Add a reply manually"}
+                </p>
+                <div className="mt-4 grid gap-3">
+                  <input
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    placeholder="Guest name (required)"
+                    required
+                    className="w-full rounded-lg px-4 py-2.5 text-[14px] outline-none"
+                    style={{ ...sans, background: "#f8f2e4", color: "#463726", border: "1px solid rgba(169,138,82,0.35)" }}
+                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <select
+                      value={form.guests}
+                      onChange={(e) => setForm({ ...form, guests: e.target.value })}
+                      className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none"
+                      style={{ ...sans, background: "#f8f2e4", color: "#463726", border: "1px solid rgba(169,138,82,0.35)" }}
+                    >
+                      <option value="Just me">Just me</option>
+                      <option value="+1">+1</option>
+                      <option value="+2">+2</option>
+                    </select>
+                    <select
+                      value={form.attending}
+                      onChange={(e) => setForm({ ...form, attending: e.target.value })}
+                      className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none"
+                      style={{ ...sans, background: "#f8f2e4", color: "#463726", border: "1px solid rgba(169,138,82,0.35)" }}
+                    >
+                      <option value="Yes">Attending</option>
+                      <option value="No">Not attending</option>
+                    </select>
+                  </div>
+                  <input
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    placeholder="Email (optional)"
+                    type="email"
+                    className="w-full rounded-lg px-4 py-2.5 text-[14px] outline-none"
+                    style={{ ...sans, background: "#f8f2e4", color: "#463726", border: "1px solid rgba(169,138,82,0.35)" }}
+                  />
+                  <input
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    placeholder="Phone (optional)"
+                    className="w-full rounded-lg px-4 py-2.5 text-[14px] outline-none"
+                    style={{ ...sans, background: "#f8f2e4", color: "#463726", border: "1px solid rgba(169,138,82,0.35)" }}
+                  />
+                </div>
+                <div className="mt-4 flex justify-center gap-3">
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="rounded-full px-6 py-2.5 text-[11px] uppercase"
+                    style={{ ...sans, letterSpacing: "0.3em", color: "#f6efe1", background: "linear-gradient(180deg,#b7995c,#8f7340)", opacity: saving ? 0.6 : 1 }}
+                  >
+                    {saving ? "Saving…" : editingId ? "Save changes" : "Add to list"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cancelForm}
+                    className="rounded-full px-6 py-2.5 text-[11px] uppercase"
+                    style={{ ...sans, letterSpacing: "0.3em", color: "#8f7340", border: "1px solid rgba(169,138,82,0.4)" }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
+
             {rsvps.length === 0 ? (
               <p className="mt-12 text-center italic" style={{ ...serif, color: "#8a7a63" }}>
                 No RSVPs yet — they&apos;ll appear here the moment someone replies.
@@ -141,6 +278,7 @@ export default function RsvpsPage() {
                       <th className="px-4 py-3">Email</th>
                       <th className="px-4 py-3">Phone</th>
                       <th className="px-4 py-3">Received</th>
+                      <th className="px-2 py-3" aria-label="Edit" />
                       <th className="px-2 py-3" aria-label="Remove" />
                     </tr>
                   </thead>
@@ -158,6 +296,17 @@ export default function RsvpsPage() {
                             hour: "2-digit",
                             minute: "2-digit",
                           })}
+                        </td>
+                        <td className="px-2 py-3">
+                          <button
+                            onClick={() => startEdit(r)}
+                            aria-label={`Edit ${r.name}`}
+                            title="Edit this reply"
+                            className="px-1 text-[13px]"
+                            style={{ color: "#8f7340" }}
+                          >
+                            ✎
+                          </button>
                         </td>
                         <td className="px-2 py-3">
                           <button

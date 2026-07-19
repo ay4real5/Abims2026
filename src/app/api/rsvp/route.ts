@@ -6,6 +6,8 @@ import { NextRequest, NextResponse } from "next/server";
  * POST: called by the RSVP form alongside the Web3Forms email, so every
  *       reply lands in one sortable list (the email remains a per-reply copy).
  * GET  (?key=ADMIN_KEY): the full list, or CSV with &format=csv.
+ * PATCH (?key=ADMIN_KEY&id=…): edit a row — used by the /rsvps admin page for
+ *        guests who replied outside the site (phone, in person).
  * DELETE (?key=ADMIN_KEY&id=…): remove a row (duplicates, tests, spam).
  * The key comes from RSVP_ADMIN_KEY (Vercel env var), defaulting to "Abims2026".
  */
@@ -154,6 +156,45 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({ ok: true, rsvps: rows.map(serialize) });
+}
+
+export async function PATCH(request: NextRequest) {
+  if (request.nextUrl.searchParams.get("key") !== ADMIN_KEY) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const id = request.nextUrl.searchParams.get("id");
+  if (!id) {
+    return NextResponse.json({ error: "id is required." }, { status: 400 });
+  }
+  const sql = getSql();
+  if (!sql) {
+    return NextResponse.json({ error: "DATABASE_URL is not configured." }, { status: 503 });
+  }
+
+  let payload: unknown;
+  try {
+    payload = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  }
+  const body = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
+  const name = normalize(body.name);
+  if (!name) {
+    return NextResponse.json({ error: "Name is required." }, { status: 400 });
+  }
+
+  try {
+    await ensureTable(sql);
+    await sql`
+      UPDATE rsvps
+      SET name = ${name}, email = ${normalize(body.email)}, phone = ${normalize(body.phone)},
+          guests = ${normalize(body.guests)}, attending = ${normalize(body.attending) || "Yes"}
+      WHERE id = ${id};
+    `;
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: "Unable to update RSVP." }, { status: 500 });
+  }
 }
 
 export async function DELETE(request: NextRequest) {

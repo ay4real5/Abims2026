@@ -141,6 +141,16 @@ export const site = {
   },
 
   /**
+   * ✏️ Set true to close RSVPs to guests — the modal shows `rsvpClosedMessage`
+   * instead of the form, and the backend refuses public submissions too (only
+   * the admin key can still add/edit replies from /rsvps). Flip back to false
+   * to reopen.
+   */
+  rsvpClosed: true,
+  rsvpClosedMessage:
+    "RSVPs have now closed as we finalise numbers with our vendors. If you haven't yet replied, please reach out to us directly and we'll do our best to accommodate you.",
+
+  /**
    * ✅ Automatic RSVP collection (recommended). Paste a form endpoint here and
    * every RSVP lands in one place you can sort/export — no WhatsApp needed.
    * Easiest: create a free form at https://formspree.io (or web3forms.com),

@@ -163,7 +163,18 @@ export default function RsvpModal({ open, onClose, onChoose }: Props) {
             transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
           >
             {/* ── ask ── */}
-            {step === "ask" && (
+            {step === "ask" && site.rsvpClosed && (
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
+                <p className="text-3xl" aria-hidden style={{ color: "#a98a52" }}>♥</p>
+                <p className="mt-4 text-2xl italic" style={{ ...serif, color: "#4a3d2c" }}>With gratitude</p>
+                <p className="mt-3 text-[13px] font-light italic leading-relaxed" style={{ ...serif, color: "#8a7a63" }}>
+                  {site.rsvpClosedMessage}
+                </p>
+                <button onClick={onClose} className="mt-7 w-full rounded-full py-3.5 text-[12px] uppercase transition-transform active:scale-95" style={{ ...sans, letterSpacing: "0.3em", color: "#f6efe1", background: "linear-gradient(180deg,#b7995c,#8f7340)" }}>Close</button>
+              </motion.div>
+            )}
+
+            {step === "ask" && !site.rsvpClosed && (
               <>
                 <p className="text-2xl italic" style={{ ...serif, color: "#4a3d2c" }}>Will you join us?</p>
                 <p className="mt-3 text-[13px] font-light italic leading-relaxed" style={{ ...serif, color: "#8a7a63" }}>

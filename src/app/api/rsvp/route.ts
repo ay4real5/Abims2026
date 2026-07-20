@@ -3,8 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 
 /**
  * RSVP guest list — stored in the same Neon database as the blessings wall.
- * POST: called by the RSVP form alongside the Web3Forms email, so every
- *       reply lands in one sortable list (the email remains a per-reply copy).
+ * POST (?key=ADMIN_KEY, required): adds a reply. RSVPs are closed to the
+ *       public (see site.rsvpClosed) — this now only accepts the admin key,
+ *       used by the "Add guest" form on /rsvps for replies taken by phone or
+ *       in person. Reopen by requiring the key only when site.rsvpClosed is
+ *       true, if public RSVPs are ever turned back on.
  * GET  (?key=ADMIN_KEY): the full list, or CSV with &format=csv.
  * PATCH (?key=ADMIN_KEY&id=…): edit a row — used by the /rsvps admin page for
  *        guests who replied outside the site (phone, in person).
@@ -67,6 +70,15 @@ function serialize(row: RsvpRow) {
 }
 
 export async function POST(request: NextRequest) {
+  /* RSVPs are closed — only the admin (adding a reply manually from /rsvps)
+     may still insert rows. Public submissions get a clear, friendly refusal. */
+  if (request.nextUrl.searchParams.get("key") !== ADMIN_KEY) {
+    return NextResponse.json(
+      { error: "RSVPs are now closed. Please contact the couple directly." },
+      { status: 410 }
+    );
+  }
+
   const sql = getSql();
   if (!sql) {
     return NextResponse.json({ error: "DATABASE_URL is not configured." }, { status: 503 });

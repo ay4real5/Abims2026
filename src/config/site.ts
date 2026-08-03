@@ -18,7 +18,7 @@ export const site = {
   /** Quiet location line shown under the names on the hero (not the date). */
   place: "Bolton · England",
   /** ISO datetime of the ceremony — drives the live countdown */
-  weddingDateISO: "2026-08-15T10:00:00+01:00",
+  weddingDateISO: "2026-08-15T11:00:00+01:00",
 
   /**
    * "Our Story" — a scroll-driven, chapter-by-chapter sequence. Each chapter has
@@ -59,9 +59,9 @@ export const site = {
     kind: "church",
     venue: "RCCG Breakthrough Church",
     address: ["44 St George's Rd, Bolton BL1 2DD"],
-    time: "10:00 am",
+    time: "11:00 am",
     /** Precise start — powers the "Add to calendar" download. "" hides that button. */
-    startISO: "2026-08-15T10:00:00+01:00",
+    startISO: "2026-08-15T11:00:00+01:00",
     mapsUrl:
       "https://www.google.com/maps/search/?api=1&query=RCCG%20Breakthrough%20Church%2C%2044%20St%20George's%20Rd%2C%20Bolton%20BL1%202DD",
   },
@@ -71,8 +71,8 @@ export const site = {
     kind: "toast",
     venue: "Blancstorystudios",
     address: ["M12 6JR"],
-    time: "1:00 pm",
-    startISO: "2026-08-15T13:00:00+01:00",
+    time: "2:30 pm",
+    startISO: "2026-08-15T14:30:00+01:00",
     mapsUrl: "https://www.google.com/maps/search/?api=1&query=Blancstorystudios%2C%20M12%206JR",
   },
 

@@ -731,11 +731,6 @@ export default function RsvpsPage() {
                         {sendProgress}
                       </p>
                     )}
-                    {!site.emailjs.seatingTemplateId && (
-                      <p className="mt-2 text-center text-[11px] italic" style={{ ...serif, color: "#b4562f" }}>
-                        seatingTemplateId isn&apos;t set in site.ts yet — sends will fail until the EmailJS template is created.
-                      </p>
-                    )}
 
                     <div className="mt-6 overflow-x-auto rounded-2xl shadow-lg" style={{ background: "#fffdf7" }}>
                       <table className="w-full text-left text-[13px]" style={{ ...sans, color: "#463726" }}>

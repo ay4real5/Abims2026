@@ -168,15 +168,14 @@ export const site = {
     serviceId: "service_wq7ms0e",
     templateId: "template_xqrkr4p",
     /**
-     * ✏️ Table-seating / countdown email template — create this template in
-     * the EmailJS dashboard (variables: name, tableNumber, guests, daysUntil,
-     * weddingDate, ceremonyVenue, ceremonyTime, receptionVenue, receptionTime)
-     * and paste its ID here. Also requires "Allow EmailJS API for non-browser
-     * applications" enabled under EmailJS → Account → Security, since this
-     * send happens server-side from /api/rsvp/seating-email. Left "" until
-     * that's done — the send route refuses to send without it.
+     * Table-seating / countdown email template (variables: name, tableNumber,
+     * guests, daysUntil, weddingDate, ceremonyVenue, ceremonyTime,
+     * receptionVenue, receptionTime). Sending also requires the
+     * EMAILJS_PRIVATE_KEY env var on Vercel (EmailJS's "Use Private Key"
+     * account setting is on, so accessToken is required on every send) —
+     * the private key itself is a secret and never goes in this file.
      */
-    seatingTemplateId: "",
+    seatingTemplateId: "template_tbrgx6v",
     publicKey: "xi_qSKReYZ-rU3djz",
   },
 

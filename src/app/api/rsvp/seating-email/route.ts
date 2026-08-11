@@ -39,6 +39,8 @@ async function sendOne(row: Row, sql: NonNullable<ReturnType<typeof getSql>>): P
   if (!row.email) return { id: row.id, ok: false, error: "No email on file." };
   if (row.table_number == null) return { id: row.id, ok: false, error: "No table assigned." };
   if (!site.emailjs.seatingTemplateId) return { id: row.id, ok: false, error: "seatingTemplateId is not configured." };
+  const privateKey = process.env.EMAILJS_PRIVATE_KEY;
+  if (!privateKey) return { id: row.id, ok: false, error: "EMAILJS_PRIVATE_KEY is not set." };
 
   try {
     const res = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
@@ -48,6 +50,7 @@ async function sendOne(row: Row, sql: NonNullable<ReturnType<typeof getSql>>): P
         service_id: site.emailjs.serviceId,
         template_id: site.emailjs.seatingTemplateId,
         user_id: site.emailjs.publicKey,
+        accessToken: privateKey,
         template_params: {
           name: row.name,
           email: row.email,

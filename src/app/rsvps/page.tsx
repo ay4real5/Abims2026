@@ -98,6 +98,7 @@ export default function RsvpsPage() {
   const [draftTables, setDraftTables] = useState<Record<string, number | null>>({});
   const [seatingNotice, setSeatingNotice] = useState("");
   const [savingSeating, setSavingSeating] = useState(false);
+  const [expandedTable, setExpandedTable] = useState<number | null>(null);
 
   // Seating Email tab state
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -545,19 +546,27 @@ export default function RsvpsPage() {
                   </p>
                 ) : (
                   <>
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                    <p className="text-center text-[11px] italic" style={{ ...serif, color: "#8a7a63" }}>
+                      Tap a table to see who&apos;s seated there.
+                    </p>
+                    <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-5">
                       {Array.from({ length: site.seating.tableCount }, (_, i) => i + 1).map((t) => {
                         const occ = tableOccupancy()[t];
                         const over = occ > site.seating.seatsPerTable;
+                        const active = expandedTable === t;
                         return (
-                          <div
+                          <button
                             key={t}
-                            className="rounded-xl p-3 text-center"
+                            type="button"
+                            onClick={() => setExpandedTable(active ? null : t)}
+                            className="rounded-xl p-3 text-center transition"
                             style={{
                               background: over
                                 ? "rgba(180,86,47,0.12)"
                                 : `rgba(183,153,92,${0.08 + 0.5 * Math.min(1, occ / site.seating.seatsPerTable)})`,
-                              border: `1px solid ${over ? "#b4562f" : "rgba(169,138,82,0.4)"}`,
+                              border: `1px solid ${over ? "#b4562f" : active ? "#8f7340" : "rgba(169,138,82,0.4)"}`,
+                              boxShadow: active ? "0 0 0 2px rgba(143,115,64,0.35)" : "none",
+                              cursor: "pointer",
                             }}
                           >
                             <p className="text-[11px] uppercase" style={{ ...sans, letterSpacing: "0.2em", color: over ? "#b4562f" : "#8f7340" }}>
@@ -566,10 +575,52 @@ export default function RsvpsPage() {
                             <p className="mt-1 text-[15px] font-medium" style={{ ...serif, color: "#4a3d2c" }}>
                               {occ}/{site.seating.seatsPerTable}
                             </p>
-                          </div>
+                          </button>
                         );
                       })}
                     </div>
+
+                    {expandedTable !== null && (
+                      <div className="mx-auto mt-4 max-w-md rounded-2xl p-4 shadow-lg" style={{ background: "#fffdf7", border: "1px solid rgba(169,138,82,0.25)" }}>
+                        <div className="flex items-center justify-between">
+                          <p className="text-[11px] uppercase" style={{ ...sans, letterSpacing: "0.2em", color: "#8f7340" }}>
+                            Table {expandedTable} — {tableOccupancy()[expandedTable]}/{site.seating.seatsPerTable} seated
+                          </p>
+                          <button
+                            onClick={() => setExpandedTable(null)}
+                            aria-label="Close"
+                            className="text-[13px]"
+                            style={{ color: "#8f7340" }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        {yesRows.filter((r) => draftTables[r.id] === expandedTable).length === 0 ? (
+                          <p className="mt-3 text-center text-[12px] italic" style={{ ...serif, color: "#8a7a63" }}>
+                            No one seated here yet.
+                          </p>
+                        ) : (
+                          <ul className="mt-3 grid gap-2">
+                            {yesRows
+                              .filter((r) => draftTables[r.id] === expandedTable)
+                              .map((r) => (
+                                <li key={r.id} className="flex items-center justify-between gap-3 text-[13px]" style={{ ...sans, color: "#463726" }}>
+                                  <span>{r.name} <span style={{ color: "#8a7a63" }}>· {r.guests || "Just me"} · {headcount(r.guests)}</span></span>
+                                  <button
+                                    onClick={() => setTableFor(r.id, null)}
+                                    aria-label={`Unseat ${r.name}`}
+                                    title="Move back to unassigned"
+                                    className="text-[12px]"
+                                    style={{ color: "#b4562f" }}
+                                  >
+                                    ✕
+                                  </button>
+                                </li>
+                              ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
 
                     {seatingNotice && (
                       <p className="mt-4 text-center text-[12px] italic" style={{ ...serif, color: "#b4562f" }}>

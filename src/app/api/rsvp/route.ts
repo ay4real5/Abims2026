@@ -1,5 +1,5 @@
-import { neon } from "@neondatabase/serverless";
 import { NextRequest, NextResponse } from "next/server";
+import { ADMIN_KEY, ensureTable, getSql } from "@/lib/rsvp-db";
 
 /**
  * RSVP guest list — stored in the same Neon database as the blessings wall.
@@ -13,6 +13,8 @@ import { NextRequest, NextResponse } from "next/server";
  *        guests who replied outside the site (phone, in person).
  * DELETE (?key=ADMIN_KEY&id=…): remove a row (duplicates, tests, spam).
  * The key comes from RSVP_ADMIN_KEY (Vercel env var), defaulting to "Abims2026".
+ * Table seating and the seating email live in the sibling ./tables and
+ * ./seating-email routes — they share this table via src/lib/rsvp-db.ts.
  */
 
 type RsvpRow = {
@@ -23,35 +25,9 @@ type RsvpRow = {
   guests: string;
   attending: string;
   created_at: string;
+  table_number: number | null;
+  email_sent_at: string | null;
 };
-
-const ADMIN_KEY = process.env.RSVP_ADMIN_KEY || "Abims2026";
-
-function getSql() {
-  const url = process.env.DATABASE_URL;
-  if (!url) return null;
-  return neon(url);
-}
-
-async function ensureTable(sql: NonNullable<ReturnType<typeof getSql>>) {
-  await sql`
-    CREATE EXTENSION IF NOT EXISTS pgcrypto;
-  `;
-  await sql`
-    CREATE TABLE IF NOT EXISTS rsvps (
-      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-      name text NOT NULL,
-      email text NOT NULL DEFAULT '',
-      phone text NOT NULL DEFAULT '',
-      guests text NOT NULL DEFAULT '',
-      attending text NOT NULL DEFAULT 'Yes',
-      created_at timestamptz NOT NULL DEFAULT now()
-    );
-  `;
-  await sql`
-    CREATE INDEX IF NOT EXISTS rsvps_created_at_idx ON rsvps (created_at DESC);
-  `;
-}
 
 function normalize(value: unknown) {
   return String(value ?? "").replace(/\s+/g, " ").trim().slice(0, 200);
@@ -66,6 +42,8 @@ function serialize(row: RsvpRow) {
     guests: row.guests,
     attending: row.attending,
     receivedAt: row.created_at,
+    tableNumber: row.table_number,
+    emailSentAt: row.email_sent_at,
   };
 }
 
@@ -140,7 +118,7 @@ export async function GET(request: NextRequest) {
   try {
     await ensureTable(sql);
     rows = (await sql`
-      SELECT id, name, email, phone, guests, attending, created_at
+      SELECT id, name, email, phone, guests, attending, created_at, table_number, email_sent_at
       FROM rsvps
       ORDER BY created_at DESC;
     `) as RsvpRow[];
@@ -152,10 +130,12 @@ export async function GET(request: NextRequest) {
     // created_at arrives from the Neon driver as a Date, so coerce every cell
     const esc = (v: unknown) => `"${String(v ?? "").replaceAll('"', '""')}"`;
     const table = [
-      ["Name", "Email", "Phone", "Guests", "Attending", "Received"],
+      ["Name", "Email", "Phone", "Guests", "Attending", "Received", "Table", "Email Sent"],
       ...rows.map((r) => [
         r.name, r.email, r.phone, r.guests, r.attending,
         new Date(r.created_at).toISOString(),
+        r.table_number == null ? "" : String(r.table_number),
+        r.email_sent_at ? new Date(r.email_sent_at).toISOString() : "",
       ]),
     ];
     const csv = table.map((row) => row.map(esc).join(",")).join("\r\n");

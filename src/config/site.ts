@@ -69,19 +69,20 @@ export const site = {
     title: "Reception",
     icon: "🥂",
     kind: "toast",
-    venue: "Blancstorystudios",
-    address: ["M12 6JR"],
+    venue: "Holiday Inn Bolton",
+    address: ["1 Higher Bridge Street, Bolton, BL1 2EW, United Kingdom"],
     time: "2:30 pm",
     startISO: "2026-08-15T14:30:00+01:00",
-    mapsUrl: "https://www.google.com/maps/search/?api=1&query=Blancstorystudios%2C%20M12%206JR",
+    mapsUrl:
+      "https://www.google.com/maps/search/?api=1&query=Holiday%20Inn%20Bolton%2C%201%20Higher%20Bridge%20Street%2C%20Bolton%20BL1%202EW",
   },
 
   /** The short journey between the two venues — shown as a gold route. "" hides it. */
   travel: {
-    from: "Bolton",
-    to: "Manchester",
-    duration: "≈ 30 min",
-    note: "A short journey from the ceremony to the celebration.",
+    from: "Ceremony",
+    to: "Reception",
+    duration: "≈ 5 min",
+    note: "Just a short hop across Bolton from the ceremony to the celebration.",
   },
 
   dressCode: "Champagne gold, ivory & olive green",

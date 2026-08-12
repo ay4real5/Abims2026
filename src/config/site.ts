@@ -179,9 +179,14 @@ export const site = {
     publicKey: "xi_qSKReYZ-rU3djz",
   },
 
-  /** Table seating — used by the auto-assign tool and the /rsvps admin page. */
+  /**
+   * Table seating — used by the auto-assign tool and the /rsvps admin page.
+   * Table 11 is the children's table. Auto-assign fills the lowest-numbered
+   * table with room, so it only reaches 11 once 1–10 are full — seat the
+   * children there by hand before auto-assigning the rest.
+   */
   seating: {
-    tableCount: 10,
+    tableCount: 11,
     seatsPerTable: 10,
   },
 

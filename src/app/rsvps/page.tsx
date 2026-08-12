@@ -9,8 +9,9 @@ import { site } from "@/config/site";
  * Not linked from the invitation; guests never see this page.
  *
  * Three tabs: Guest List (add/edit/delete replies, as before), Seating
- * (assign each party to one of the 10 tables), and Seating Email (bulk-send
- * guests their table number once seating is finalised).
+ * (assign each party to one of the 10 tables), and Notify Guests (bulk-send
+ * table numbers once seating is finalised — email when a guest has one on
+ * file, SMS via Twilio otherwise).
  */
 
 type RsvpRecord = {
@@ -50,9 +51,16 @@ function formatWhen(iso: string) {
   });
 }
 
-/** Why a party can't yet receive the seating email, or null if it's eligible. */
-function seatingEmailBlocker(r: RsvpRecord): string | null {
-  if (!r.email) return "No email on file";
+/** "email" if they have an address on file, else "sms" if they have a phone, else null (no channel at all). */
+function notifyChannel(r: RsvpRecord): "email" | "sms" | null {
+  if (r.email) return "email";
+  if (r.phone) return "sms";
+  return null;
+}
+
+/** Why a party can't yet be notified, or null if it's eligible via email or SMS. */
+function notifyBlocker(r: RsvpRecord): string | null {
+  if (!notifyChannel(r)) return "No email or phone on file";
   if (r.tableNumber == null) return "No table assigned yet";
   return null;
 }
@@ -254,9 +262,9 @@ export default function RsvpsPage() {
     void load(key);
   };
 
-  /* ── Seating email ───────────────────────────────────────────── */
+  /* ── Seating email / SMS ─────────────────────────────────────── */
 
-  const eligible = yesRows.filter((r) => !seatingEmailBlocker(r));
+  const eligible = yesRows.filter((r) => !notifyBlocker(r));
 
   const toggleSelected = (id: string) => {
     setSelected((prev) => {
@@ -271,18 +279,13 @@ export default function RsvpsPage() {
     setSelected((prev) => (prev.size === eligible.length ? new Set() : new Set(eligible.map((r) => r.id))));
   };
 
-  const sendSeatingEmails = async () => {
-    const ids = Array.from(selected);
-    if (ids.length === 0 || sending) return;
-    setSending(true);
-    setSendResults({});
+  const sendInChunks = async (endpoint: string, ids: string[], all: Record<string, SendResult>, done: { count: number; total: number }) => {
     const chunkSize = 10;
-    const all: Record<string, SendResult> = {};
     for (let i = 0; i < ids.length; i += chunkSize) {
       const chunk = ids.slice(i, i + chunkSize);
-      setSendProgress(`Sending… ${i}/${ids.length}`);
+      setSendProgress(`Sending… ${done.count}/${done.total}`);
       try {
-        const res = await fetch(`/api/rsvp/seating-email?key=${encodeURIComponent(key)}`, {
+        const res = await fetch(`${endpoint}?key=${encodeURIComponent(key)}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ids: chunk }),
@@ -294,8 +297,23 @@ export default function RsvpsPage() {
       } catch {
         for (const id of chunk) all[id] = { ok: false, error: "Network error." };
       }
+      done.count += chunk.length;
       setSendResults({ ...all });
     }
+  };
+
+  const sendSeatingEmails = async () => {
+    const ids = Array.from(selected);
+    if (ids.length === 0 || sending) return;
+    setSending(true);
+    setSendResults({});
+    const byId = new Map(yesRows.map((r) => [r.id, r]));
+    const emailIds = ids.filter((id) => notifyChannel(byId.get(id)!) === "email");
+    const smsIds = ids.filter((id) => notifyChannel(byId.get(id)!) === "sms");
+    const all: Record<string, SendResult> = {};
+    const done = { count: 0, total: ids.length };
+    await sendInChunks("/api/rsvp/seating-email", emailIds, all, done);
+    await sendInChunks("/api/rsvp/seating-sms", smsIds, all, done);
     setSendProgress(`Done — ${ids.length} processed.`);
     setSending(false);
     void load(key);
@@ -363,7 +381,7 @@ export default function RsvpsPage() {
                 Seating
               </button>
               <button onClick={() => setTab("email")} style={tab === "email" ? pillActive : pillInactive}>
-                Seating Email
+                Notify Guests
               </button>
             </div>
 
@@ -704,8 +722,8 @@ export default function RsvpsPage() {
                 ) : (
                   <>
                     <p className="text-center text-[12px] italic" style={{ ...serif, color: "#6b5d4f" }}>
-                      {eligible.length} of {yesRows.length} attending {yesRows.length === 1 ? "party" : "parties"} ready to email
-                      (has an address on file and a saved table).
+                      {eligible.length} of {yesRows.length} attending {yesRows.length === 1 ? "party" : "parties"} ready to notify
+                      (has an email or phone on file and a saved table — email is used when both exist, SMS otherwise).
                     </p>
 
                     <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
@@ -723,7 +741,7 @@ export default function RsvpsPage() {
                         className="rounded-full px-6 py-2.5 text-[11px] uppercase"
                         style={{ ...sans, letterSpacing: "0.3em", color: "#f6efe1", background: "linear-gradient(180deg,#b7995c,#8f7340)", opacity: selected.size === 0 || sending ? 0.5 : 1 }}
                       >
-                        {sending ? "Sending…" : `Send seating email to ${selected.size}`}
+                        {sending ? "Sending…" : `Send seating notice to ${selected.size}`}
                       </button>
                     </div>
                     {sendProgress && (
@@ -745,14 +763,16 @@ export default function RsvpsPage() {
                               />
                             </th>
                             <th className="px-4 py-3">Name</th>
-                            <th className="px-4 py-3">Email</th>
+                            <th className="px-4 py-3">Contact</th>
+                            <th className="px-4 py-3">Channel</th>
                             <th className="px-4 py-3">Table</th>
                             <th className="px-4 py-3">Status</th>
                           </tr>
                         </thead>
                         <tbody>
                           {yesRows.map((r) => {
-                            const blocker = seatingEmailBlocker(r);
+                            const blocker = notifyBlocker(r);
+                            const channel = notifyChannel(r);
                             const result = sendResults[r.id];
                             return (
                               <tr key={r.id} style={{ borderTop: "1px solid rgba(169,138,82,0.2)", opacity: blocker ? 0.5 : 1 }}>
@@ -765,7 +785,8 @@ export default function RsvpsPage() {
                                   />
                                 </td>
                                 <td className="px-4 py-3 font-medium">{r.name}</td>
-                                <td className="px-4 py-3">{r.email || "—"}</td>
+                                <td className="px-4 py-3">{channel === "email" ? r.email : channel === "sms" ? r.phone : "—"}</td>
+                                <td className="px-4 py-3">{channel === "email" ? "Email" : channel === "sms" ? "SMS" : "—"}</td>
                                 <td className="px-4 py-3">{r.tableNumber ?? "—"}</td>
                                 <td className="px-4 py-3 text-[12px]" style={{ color: result && !result.ok ? "#b4562f" : "#8a7a63" }}>
                                   {blocker

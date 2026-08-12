@@ -35,12 +35,44 @@ function toE164(raw: string): string | null {
   return digits.length >= 8 ? "+" + digits : null;
 }
 
+/**
+ * The party in words, e.g. " (you and your 2 guests)". The stored `guests`
+ * value is a raw form field ("Just me", "+2", "3") that must never reach a
+ * guest verbatim; a lone guest gets no suffix at all.
+ */
+function partyPhrase(guests: string): string {
+  if (!guests || guests === "Just me") return "";
+  const plus = /^\+(\d+)$/.exec(guests);
+  const extra = plus ? parseInt(plus[1], 10) : parseInt(guests, 10) - 1;
+  if (Number.isNaN(extra) || extra < 1) return "";
+  return extra === 1 ? " (you and your guest)" : ` (you and your ${extra} guests)`;
+}
+
+/**
+ * Laid out over several lines so the details scan on a phone rather than
+ * arriving as one block of prose. The line breaks are effectively free: each
+ * one replaces a space, and newline is a normal GSM-7 character.
+ *
+ * Kept strictly within the GSM-7 alphabet — no em dashes, curly quotes or
+ * emoji. One non-GSM character re-encodes the whole message as UCS-2, which
+ * cuts the segment size from 153 to 67 chars and silently adds ~50% to the
+ * bill. At the current wording the longest realistic party still fits in two
+ * segments; re-check that before adding to it.
+ */
 function smsBody(row: Row): string {
-  return (
-    `Hi ${row.name}, ${daysUntilWedding()} days to go! You're seated at Table ${row.table_number} for the reception (${row.guests}). ` +
-    `Ceremony: ${site.ceremony.venue} ${site.ceremony.time}. Reception: ${site.reception.venue} ${site.reception.time}. ` +
-    `— Oyebimpe & Ayorinde`
-  );
+  return [
+    `Hi ${row.name}, only ${daysUntilWedding()} days to go!`,
+    ``,
+    `We are so glad you will be with us. You are seated at Table ${row.table_number}${partyPhrase(row.guests)} for the reception.`,
+    ``,
+    `Ceremony ${site.ceremony.time}`,
+    `${site.ceremony.venue}, ${site.ceremony.address[0]}`,
+    ``,
+    `Reception ${site.reception.time}`,
+    `${site.reception.venue}`,
+    ``,
+    `- ${site.coupleNames}`,
+  ].join("\n");
 }
 
 async function sendOne(row: Row, sql: NonNullable<ReturnType<typeof getSql>>): Promise<{ id: string; ok: boolean; error?: string }> {
